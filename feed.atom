@@ -1,0 +1,947 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+	<id>https://daveaglick.com/</id>
+	<title />
+	<link rel="self" href="https://daveaglick.com/" />
+	<rights>2020</rights>
+	<updated>2020-08-04T02:22:32Z</updated>
+	<subtitle>The personal blog of Dave Glick</subtitle>
+	<entry>
+		<id>https://daveaglick.com/posts/default-interface-members-what-are-they-good-for</id>
+		<title>Default Interface Members, What Are They Good For?</title>
+		<link href="https://daveaglick.com/posts/default-interface-members-what-are-they-good-for" />
+		<link rel="enclosure" type="image" href="https://daveaglick.com/images/thumbs-up.jpg" />
+		<updated>2019-09-12T00:00:00Z</updated>
+		<content>&lt;p&gt;&lt;a href="https://daveaglick.com/posts/default-interface-members-and-inheritance"&gt;In my last post&lt;/a&gt; I promised to look at some of the use cases where I think it's worthwhile to consider using default interface members. They're certainly not going to replace many existing conventions, but I have found some situations where targetted use can lead to cleaner, more maintainable code (at least in my own opinion).&lt;/p&gt;
+&lt;h1 id="update-interfaces-without-breaking"&gt;Update Interfaces Without Breaking&lt;/h1&gt;
+&lt;p&gt;&lt;a href="https://docs.microsoft.com/en-us/dotnet/csharp/tutorials/default-interface-members-versions"&gt;The docs&lt;/a&gt; say:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;The most common scenario is to safely add members to an interface already released and used by innumerable clients.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;The problem this solves is that if add a new member to an interface, every type that implements that interface will need to provide an implementation for that member. This may not be such a big deal if the interface is in your own code but as with any breaking change, in a library released to the public or other teams it can create a lot of headaches.&lt;/p&gt;
+&lt;p&gt;Consider the example from my previous post:&lt;/p&gt;
+&lt;p&gt;Consider the following code:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-csharp"&gt;interface ICar
+{
+    string Make { get; }
+}
+
+public class Avalon : ICar
+{
+    public string Make =&amp;gt; "Toyota";
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;If I wanted to add a new &lt;code&gt;GetTopSpeed()&lt;/code&gt; method to the interface, I'd need to then implement it in the &lt;code&gt;Avalon&lt;/code&gt; class:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-csharp"&gt;interface ICar
+{
+    string Make { get; }
+    int GetTopSpeed();
+}
+
+public class Avalon : ICar
+{
+    public string Make =&amp;gt; "Toyota";
+    public int GetTopSpeed() =&amp;gt; 130;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;However, if I create a default implementation of the new &lt;code&gt;GetTopSpeed()&lt;/code&gt; method in &lt;code&gt;ICar&lt;/code&gt; I don't need to add it to every implementing class:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-csharp"&gt;interface ICar
+{
+    string Make { get; }
+    public int GetTopSpeed() =&amp;gt; 150;
+}
+
+public class Avalon : ICar
+{
+    public string Make =&amp;gt; "Toyota";
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;In addition, I can still provide override implementations for classes where the default isn't appropriate:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-csharp"&gt;interface ICar
+{
+    string Make { get; }
+    public int GetTopSpeed() =&amp;gt; 150;
+}
+
+public class Avalon : ICar
+{
+    public string Make =&amp;gt; "Toyota";
+    public int GetTopSpeed() =&amp;gt; 130;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;One important note though is that as I mentioned in my previous post, the default &lt;code&gt;GetTopSpeed()&lt;/code&gt; method will only be available on variables of type &lt;code&gt;ICar&lt;/code&gt; and not &lt;code&gt;Avalon&lt;/code&gt; if you don't also provide an override implementation in the class. That means this technique is primarily useful only if you pass around interface types and not implementing types (otherwise you'll end up with a bunch of casts to the interface type in order to get access to the default member implementations).&lt;/p&gt;
+&lt;h1 id="mixins-and-traits-sort-of"&gt;Mixins and Traits (Sort Of)&lt;/h1&gt;
+&lt;p&gt;&lt;a href="https://en.wikipedia.org/wiki/Mixin"&gt;Mixins&lt;/a&gt; and the similar language concept of &lt;a href="https://en.wikipedia.org/wiki/Trait_(computer_programming)"&gt;traits&lt;/a&gt; both describe ways of extending the behavior of an object through composition without resorting to multiple inheritance.&lt;/p&gt;
+&lt;p&gt;&lt;a href="https://en.wikipedia.org/wiki/Mixin"&gt;The Wikipedia article on mixins&lt;/a&gt; says:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;A mixin can also be viewed as an interface with implemented methods.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Sound familiar?&lt;/p&gt;
+&lt;p&gt;Interfaces in C# that contain default implementations aren't exactly mixins because they can also contain unimplemented members, support interface inheritance, can be specialized, etc. However, if we make an interface that just contains default members we have a mostly traditional mixin.&lt;/p&gt;
+&lt;p&gt;Consider the following code that adds functionality for "moving" an object and tracking it's location (for example, in a game environment):&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-csharp"&gt;public interface IMovable
+{
+    public (int, int) Location { get; set; }
+    public int Angle { get; set; }
+    public int Speed { get; set; }
+
+    // A method that changes location
+    // using angle and speed
+    public void Move() =&amp;gt; Location = ...;
+}
+
+public class Car : IMovable
+{
+    public string Make =&amp;gt; "Toyota";
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Whops! There's a problem with this code that I hadn't considered until I wrote it for the post and tried to compile it. Interfaces (even ones with default implementations) can't contain state. Therefore auto-implemented properties aren't supported by default interface members. From the &lt;a href="https://github.com/dotnet/csharplang/blob/master/proposals/csharp-8.0/default-interface-methods.md#detailed-design"&gt;design document for default interface members&lt;/a&gt;:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Interfaces may not contain instance state. While static fields are now permitted instance fields are not permitted in interfaces. Instance auto-properties are not supported in interfaces, as they would implicitly declare a hidden field.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;This is where default interface members and the concept of mixins start to diverge a bit (mixins can conceptually contain state as far as I understand them), but we can still accomplish the original goal:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-csharp"&gt;public interface IMovable
+{
+    public (int, int) Location { get; set; }
+    public int Angle { get; set; }
+    public int Speed { get; set; }
+
+    // A method that changes location
+    // using angle and speed
+    public void Move() =&amp;gt; Location = ...;
+}
+
+public class Car : IMovable
+{
+    public string Make =&amp;gt; "Toyota";
+
+    // IMovable
+    public (int, int) Location { get; set; }
+    public int Angle { get; set; }
+    public int Speed { get; set; }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;This accomplishes the original goal by making the common &lt;code&gt;Move()&lt;/code&gt; method and it's implementation available to all classes that apply the interface. Sure, the class still needs to provide implementations for the properties, but the way that they're at least declared in the &lt;code&gt;IMovable&lt;/code&gt; interface means the default members in that interface can operate on the those properties and guarantees any class applying the interface will expose the correct state.&lt;/p&gt;
+&lt;p&gt;As a more complete and practical example, consider a logging mixin:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-csharp"&gt;public interface ILogger
+{
+    public void LogInfo(string message) =&amp;gt;
+        LoggerFactory
+            .GetLogger(this.GetType().Name)
+            .LogInfo(message);
+}
+
+public static class LoggerFactory
+{
+    public static ILogger GetLogger(string name) =&amp;gt;
+        new ConsoleLogger(name);
+}
+
+public class ConsoleLogger : ILogger
+{
+    private readonly string _name;
+
+    public ConsoleLogger(string name)
+    {
+        _name = name
+        ?? throw new ArgumentNullException(nameof(name));
+    }
+
+    public void LogInfo(string message) =&amp;gt;
+        Console.WriteLine($"[INFO] {_name}: {message}");
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;I could then apply the &lt;code&gt;ILogger&lt;/code&gt; interface to any class:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-csharp"&gt;public class Foo : ILogger
+{
+    public void DoSomething()
+    {
+        ((ILogger)this).LogInfo("Woot!");
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;And code like:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-csharp"&gt;Foo foo = new Foo();
+foo.DoSomething();
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Would produce:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;[INFO] Foo: Woot!
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h1 id="replacing-extension-methods"&gt;Replacing Extension Methods&lt;/h1&gt;
+&lt;p&gt;The biggest area of utility I've found so far is replacing large sets of extension methods. Let's go back to a simple logging example:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-csharp"&gt;public interface ILogger
+{
+    void Log(string level, string message);
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Before default interface members I would typically implement a bunch of extensions to this logging interface so that the logger implementation would only have to implement a single method but users could call a variety of overloads:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-csharp"&gt;public static class ILoggerExtensions
+{
+    public static void LogInfo(this ILogger logger, string message) =&amp;gt;
+        logger.Log("INFO", message);
+
+    public static void LogInfo(this ILogger logger, int id, string message) =&amp;gt;
+        logger.Log("INFO", $"[{id}] message");
+
+    public static void LogError(this ILogger logger, string message) =&amp;gt;
+        logger.Log("ERROR", message);
+
+    public static void LogError(this ILogger logger, int id, string message) =&amp;gt;
+        logger.Log("ERROR", $"[{id}] {message}");
+
+    public static void LogError(this ILogger logger, Exception ex) =&amp;gt;
+        logger.Log("ERROR", ex.Message);
+
+    public static void LogError(this ILogger logger, int id, Exception ex) =&amp;gt;
+        logger.Log("ERROR", $"[{id}] {ex.Message}");
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;That's fine, and works. But it has a few shortfalls. For one, the namespaces of the static extension class and the interface may not necessarily match. It also creates some noise by requiring the &lt;code&gt;this ILogger logger&lt;/code&gt; parameter and referring to a &lt;code&gt;logger&lt;/code&gt; instance.&lt;/p&gt;
+&lt;p&gt;What I've started doing with big sets of extensions is making them default interface members instead:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-csharp"&gt;public interface ILogger
+{
+    void Log(string level, string message);
+
+    public void LogInfo(string message) =&amp;gt;
+        Log("INFO", message);
+
+    public void LogInfo(int id, string message) =&amp;gt;
+        Log("INFO", $"[{id}] message");
+
+    public void LogError(string message) =&amp;gt;
+        Log("ERROR", message);
+
+    public void LogError(int id, string message) =&amp;gt;
+        Log("ERROR", $"[{id}] {message}");
+
+    public void LogError(Exception ex) =&amp;gt;
+        Log("ERROR", ex.Message);
+
+    public void LogError(int id, Exception ex) =&amp;gt;
+        Log("ERROR", $"[{id}] {ex.Message}");
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;I find those implementation much cleaner and easier to read (and thus maintain). Using default interface members also presents some other benefits where extensions might otherwise have been used:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;They're in the scope of the instance and &lt;code&gt;this&lt;/code&gt; can be used.&lt;/li&gt;
+&lt;li&gt;Other types of members like indexers can be provided.&lt;/li&gt;
+&lt;li&gt;They can be overridden by implementing classes to specialize the behavior.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Something that bugs me about the code above though is that it's not totally clear what the required, unimplemented contract of the interface is and what's implemented by default. A comment separating the two sections might help but I do like how extension classes are explicit in this regard.&lt;/p&gt;
+&lt;p&gt;To address that, I've starting making any interface that contains default members partial (other than one or two trivial ones). Then I put the default members in other files with the naming convention "ILogger.LogInfoDefaults.cs" and "ILogger.LogErrorDefaults.cs", etc. If I only have a small set of default members that don't suggest any sort of grouping, I name the file "ILogger.Defaults.cs".&lt;/p&gt;
+&lt;p&gt;This separates the default member implementations from the unimplemented contract that any implementing class will have to provide implementations for. It also helps break up what could become a very long file. There's even a neat trick to enable ASP.NET-style Visual Studio file nesting in any project format. Add this to your project file or &lt;code&gt;Directory.Build.props&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-xml"&gt;&amp;lt;ItemGroup&amp;gt;
+  &amp;lt;ProjectCapability Include="DynamicDependentFile"/&amp;gt;
+  &amp;lt;ProjectCapability Include="DynamicFileNesting"/&amp;gt;
+&amp;lt;/ItemGroup&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Then you can select "File Nesting" in the Solution Explorer and all your &lt;code&gt;.Defaults.cs&lt;/code&gt; files will appear as children of the main interface file.&lt;/p&gt;
+&lt;p&gt;Finally, there are still some situations where extension methods are preferred:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;If you typically pass around class types instead of the interface type (because you'd have to cast to the interface to access the default member implementations).&lt;/li&gt;
+&lt;li&gt;If you often use the pattern &lt;code&gt;public static T SomeExt&amp;lt;T&amp;gt;(this T foo)&lt;/code&gt; to return the exact type the extension was called for (for example, in a fluent API).&lt;/li&gt;
+&lt;/ul&gt;
+</content>
+		<summary>The personal blog of Dave Glick</summary>
+	</entry>
+	<entry>
+		<id>https://daveaglick.com/posts/default-interface-members-and-inheritance</id>
+		<title>Default Interface Members and Inheritance</title>
+		<link href="https://daveaglick.com/posts/default-interface-members-and-inheritance" />
+		<link rel="enclosure" type="image" href="https://daveaglick.com/images/thinking.jpg" />
+		<updated>2019-09-06T00:00:00Z</updated>
+		<content>&lt;p&gt;Default interface members (or &amp;quot;DIM&amp;quot; as I've seen the feature called) is a new language feature available in C# 8 that lets you define implementations directly in an interface. I started out with the intent of writing about use cases for the feature, but ended up writing so much that I decided to split the post in two. This part deals with how default interface members need to be invoked and the differences in semantics between class inheritance and default interface member implementation.&lt;/p&gt;
+&lt;h1 id="must-invoke-from-the-interface"&gt;Must Invoke From The Interface&lt;/h1&gt;
+&lt;p&gt;Consider the following code:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-csharp"&gt;interface ICar
+{
+    // Seems like a reasonable default
+    public int GetTopSpeed() =&amp;gt; 150;
+}
+
+public class Elantra : ICar
+{
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;This defines an interface &lt;code&gt;ICar&lt;/code&gt; with a method &lt;code&gt;GetTopSpeed()&lt;/code&gt; and that method has a default implementation. You might think you could then write:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-csharp"&gt;Elantra e = new Elantra();
+e.GetTopSpeed();
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;But that won't compile. You have to invoke default interface members from an instance of the interface (unless they've been redefined, more on that in a minute):&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-csharp"&gt;Elantra e = new Elantra();
+((ICar)e).GetTopSpeed();
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;At this point you might be thinking &amp;quot;well that seems silly,&amp;quot; but there's a good reason why default interface members behave this way. Consider the following:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-csharp"&gt;interface ICar
+{
+    // Seems like a reasonable default
+    public int GetTopSpeed() =&amp;gt; 150;
+}
+
+interface IMovable
+{
+    // Nothing moves faster than the speed of light
+    public int GetTopSpeed() =&amp;gt; 671000000;
+}
+
+public class Elantra : ICar, IMovable
+{
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;If you called &lt;code&gt;GetTopSpeed()&lt;/code&gt; on an instance of &lt;code&gt;Elantra&lt;/code&gt; what would the result be? Are you actually calling &lt;code&gt;ICar.GetTopSpeed()&lt;/code&gt; or &lt;code&gt;IMovable.GetTopSpeed()&lt;/code&gt;? This problem (often referred to as &amp;quot;diamond inheritance&amp;quot;) is one of the reasons true multiple inheritance is so difficult to do well in a language like C++. To avoid it, the C# language team explicitly elected &lt;em&gt;not&lt;/em&gt; to make default interface members a mechanism to achieve multiple inheritance. Instead you have to be explicit about which implementation you're calling to remove all ambiguity.&lt;/p&gt;
+&lt;h1 id="default-implementations-vs.inheritance"&gt;Default Implementations vs. Inheritance&lt;/h1&gt;
+&lt;p&gt;&lt;a href="https://twitter.com/daveaglick/status/1169777331608707075"&gt;Something that initially confused me&lt;/a&gt; was the relationship between default interface members and the way members are inherited in a traditional class hierarchy. Consider this code:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-csharp"&gt;interface ICar
+{
+    public string Make { get; }
+    public int Cylinders =&amp;gt; 4;
+}
+
+public abstract class Toyota : ICar
+{
+    public string Make =&amp;gt; &amp;quot;Toyota&amp;quot;;
+}
+
+public class Avalon : Toyota
+{
+    public int Cylinders =&amp;gt; 6;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;What would you expect this code to output:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-csharp"&gt;ICar car = new Avalon();
+Console.WriteLine(car.Cylinders);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;My initial reaction was that this should output &lt;code&gt;6&lt;/code&gt;, but it actually outputs &lt;code&gt;4&lt;/code&gt;.&lt;/p&gt;
+&lt;?# giphy g01ZnwAUvutuK8GIQn /?&gt;
+&lt;p&gt;The reason is because &lt;code&gt;Avalon.Cylinders&lt;/code&gt; isn't actually implementing &lt;code&gt;ICar.Cylinders&lt;/code&gt; given that the interface is implicit via the base &lt;code&gt;Toyota&lt;/code&gt; class. They're two totally different properties.&lt;/p&gt;
+&lt;p&gt;&lt;a href="https://twitter.com/ben_a_adams/status/1169790052425240581"&gt;Ben Adams was the first&lt;/a&gt; of many to point out that this behavior isn't actually different from the way interfaces currently work. The code above is essentially equivalent to writing the following, which will also output &lt;code&gt;4&lt;/code&gt; instead of &lt;code&gt;6&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-csharp"&gt;interface ICar
+{
+    public string Make { get; }
+    public int Cylinders { get; }
+}
+
+public abstract class Toyota : ICar
+{
+    public string Make =&amp;gt; &amp;quot;Toyota&amp;quot;;
+    int ICar.Cylinders =&amp;gt; 4;
+}
+
+public class Avalon : Toyota
+{
+    public int Cylinders =&amp;gt; 6;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;I envision this being something I'll have to keep reminding myself about. I think the reason is that the semantics are different from what we're used to after a decade of working with &lt;code&gt;virtual&lt;/code&gt; and &lt;code&gt;override&lt;/code&gt; in class hierarchies.&lt;/p&gt;
+&lt;p&gt;More specifically, up until default interface members we &lt;em&gt;had&lt;/em&gt; to provide an implementation within an implementing class because the interface simply couldn't contain one. That means in the code above for the abstract &lt;code&gt;Toyota&lt;/code&gt; base class I would've had to write one of these:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;public int Cylinders =&amp;gt; 4&lt;/code&gt; to implement the interface property and provide a default value, forcing the property into the inheritance chain of &lt;code&gt;Toyota&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;public abstract int Cylinders { get; }&lt;/code&gt; to define the interface property as abstract and force derived classes to provide an implementation.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;int ICar.Cylinders =&amp;gt; 4&lt;/code&gt; to implement the interface property and provide a default value, but not place the property into the inheritance chain of &lt;code&gt;Toyota&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;I've come to think of that last syntax as &amp;quot;opting-out&amp;quot; of class inheritance. I have to have &lt;em&gt;something&lt;/em&gt; that implements the interface property (because it's not implemented in the interface) and I have to use a special syntax that makes it very clear I'm implementing the property at the interface and not the class level if that's my intent. &lt;strong&gt;If you don't want the property to be a part of the class inheritance hierarchy you have to opt-out&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;Contrast that with the semantics of a default interface member. The equivalent &lt;code&gt;int ICar.Cylinders =&amp;gt; 4&lt;/code&gt; definition never has to show up in the implementing &lt;code&gt;Toyota&lt;/code&gt; class since the default property implementation was provided directly in the interface. In this case &lt;code&gt;Cylinders&lt;/code&gt; has an implementation from the interface so you're not forced to put &lt;em&gt;anything&lt;/em&gt; in the &lt;code&gt;Toyota&lt;/code&gt; class about it. That property does not belong to the class in this case. &lt;strong&gt;If you want the property to be a part of the class inheritance hierarchy you have to opt-in&lt;/strong&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-csharp"&gt;interface ICar
+{
+    public string Make { get; }
+    public int Cylinders =&amp;gt; 4;
+}
+
+public abstract class Toyota : ICar
+{
+    public string Make =&amp;gt; &amp;quot;Toyota&amp;quot;;
+    public virtual int Cylinders =&amp;gt;
+        ((ICar)this).Cylinders;
+}
+
+public class Avalon : Toyota
+{
+    public override int Cylinders =&amp;gt; 6;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;This code will output the expected &lt;code&gt;6&lt;/code&gt; because we &amp;quot;opted-in&amp;quot; to implementing the &lt;code&gt;Cylinders&lt;/code&gt; property in the &lt;code&gt;Toyota&lt;/code&gt; class instead of leaving the implementation in the interface. The &lt;code&gt;Toyota&lt;/code&gt; class only invokes the implementation from the interface, but by doing so we've placed the property implementation into the class inheritance hierarchy and can now rely on the &lt;code&gt;virtual&lt;/code&gt; and &lt;code&gt;override&lt;/code&gt; behavior we know.&lt;/p&gt;
+&lt;p&gt;One final note: the &lt;code&gt;((ICar)this).Cylinders&lt;/code&gt; syntax in the class implementation that calls the default interface implementation is awkward. &lt;a href="https://github.com/dotnet/csharplang/issues/406"&gt;There's an open issue&lt;/a&gt; to add support for &lt;code&gt;base(ICar).Cylinders&lt;/code&gt; syntax, but it requires changes to the CLR so &lt;a href="https://github.com/dotnet/csharplang/blob/master/meetings/2019/LDM-2019-04-29.md#conclusion"&gt;it got pushed to a later language version&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Update: don't use the code above!&lt;/strong&gt; If you do, you're asking for trouble. It occurred to me after writing the post, and was pointed out by a few folks on Twitter, that the pattern above with a call to &lt;code&gt;((ICar)this).Cylinders&lt;/code&gt; will &lt;em&gt;only&lt;/em&gt; work if &lt;code&gt;Cylinders&lt;/code&gt; is implemented in a derived class. In that case the call invokes the derived implementation and you're fine. If it's not implemented in a derived class though, BOOM! You'll end up with a stack overflow because the method will invoke itself recursively. I'm leaving the example here for educational purposes. This example illustrates why we really need the &lt;code&gt;base(ICar)&lt;/code&gt; feature to handle bridging default interface members and class inheritance hierarchies.&lt;/p&gt;
+</content>
+		<summary>The personal blog of Dave Glick</summary>
+	</entry>
+	<entry>
+		<id>https://daveaglick.com/posts/some-thoughts-on-feelings-in-open-source</id>
+		<title>Some Thoughts On Feelings In Open Source</title>
+		<link href="https://daveaglick.com/posts/some-thoughts-on-feelings-in-open-source" />
+		<link rel="enclosure" type="image" href="https://daveaglick.com/images/emojis.jpg" />
+		<updated>2019-03-11T00:00:00Z</updated>
+		<content>&lt;p&gt;It's been a while since I've posted anything about open source communities, but that doesn't mean I haven't continued to think about them. It's an issue that's near and dear to me and I spend a lot of time considering different aspects of open source. I'd like to take a moment to talk about one of those in particular: feelings. More specifically, why they matter in open source and some ideas on how best to incorporate them into our open source interactions.&lt;/p&gt;
+&lt;p&gt;First let's rewind just a bit. This blog post was triggered by a Twitter exchange, though I've been thinking about this for a while:&lt;/p&gt;
+&lt;?# Twitter 1105086028975624192 /?&gt;
+&lt;p&gt;I want to be clear: while the Twitter exchange was essentially subtweeting a particular blog post, the rest of what I write below is more general. I don't want there to be confusion about what the blog post in question does or doesn't say, or how it does or doesn't present it's arguments in contrast with what I write below. I think this issue is more general than that and so I'm not going to link to the other blog post to avoid distraction.&lt;/p&gt;
+&lt;p&gt;In the Twitter thread I used an analogy of building a bird house. If I want to assemble a simple bird house by joining sides together with nails, I have a whole toolbox at my disposal. I could use a screwdriver and drive the nails with the handle. I could pull out a rubber mallet and use that. Or I could select a hammer and get the job done efficiently and quickly. It seems obvious that everyone should choose the hammer. But what if I really like screwdrivers? What if I've never even seen a hammer but I'm really good at driving nails with a handle. Maybe I simply don't feel like learning about hammers right now?&lt;/p&gt;
+&lt;p&gt;This brings us to the first point I was trying to make: &lt;strong&gt;that people choose tools for all sorts of reasons and there's never really a &amp;quot;best for everyone&amp;quot; option&lt;/strong&gt;. A vibrant open source community should have lots of tools that could drive those nails, and we should celebrate and encourage that diversity because you never know when a nail is just the right shape that it can only be driven by a screwdriver handle. In my opinion it's far more valuable to talk about why hammers make a good choice for driving nails than why screwdrivers do not. That gives the consumer room to weigh their own use case against the stated benefits of all their options and pick the best one &lt;em&gt;for them&lt;/em&gt;. It might seem like saying &amp;quot;screwdrivers are terrible for this because...&amp;quot; is valuable, and maybe it is (more on that below), but without actionable information about what else I could use it's kind of moot point. And if I'm going to be talking about why a hammer is such a great tool for this job in the first place, is it really all that important to mention the screwdriver?&lt;/p&gt;
+&lt;p&gt;This is where the birdhouse analogy starts to fall apart in the context of open source. Open source tools and libraries are not physical items in a toolbox. They're not manufactured by faceless tool companies for the purposes of monetary profit. And this brings us to my second, and more important point: &lt;strong&gt;open source is (mostly) created and consumed by individuals and we need to be mindful of the inherent humanity in such a system&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;I can relate to the idea that as software craftspeople we need to put feelings aside and be analytical about our choices, both for ourselves and for our communities. After all, that's how we've been trained to write software in the first place. If a particular convention, methodology, tool, etc. isn't the best, shouldn't we do everything we can to make sure that knowledge reaches far and wide so everyone builds better software? Like other engineering disciplines, feelings have no place in this world. Does a structural engineer reserve judgement on a bridge design just because it might upset one of their peers? People might die if they do.&lt;/p&gt;
+&lt;p&gt;But here's the thing: open source is different. It's different because the people behind it, the people making it tick, are largely doing that for free, in their own time, without a defined and accepted convention for compensation (monetary or otherwise). As a global software community, we are in the midst of trying to figure out how to make open source more sustainable. There's been a lot of discussion around this lately and there will continue to be a lot more. It's a real problem without a good solution right now. And one of the biggest sustainability challenges is how to prevent burn-out. How do we, as software practitioners who rely more and more on the generosity and selflessness of open source maintainers, ensure that those maintainers stay healthy?&lt;/p&gt;
+&lt;p&gt;I think one of the ways we do it is by recognizing that this open source system we rely so heavily on has an intrinsic component of humanity that can't be abstracted away like we do with other economic systems. More directly, maintainers are people and people have feelings. But why is this different? Why shouldn't I feel comfortable saying something like &amp;quot;Kia cars are crap that don't get good gas mileage so you shouldn't buy one&amp;quot;? There's a few reasons why open source is different. For one, it's more direct. The maintainers working on the open source that you consume are typically peers that you interact with directly or through a minimum of hops. They hear what you say and read what you write.&lt;/p&gt;
+&lt;p&gt;Another difference is that those maintainers are often making personal sacrifices for your benefit, usually with very little in return. Sometimes open source is a job, but most of the time it's personal. That library you just took a dependency on can often be measured in weekends on a laptop instead of playing outdoors, evenings writing code instead of watching a movie with family, sleepless nights wondering about the best way to architecture a new feature. Those are choice the maintainers made so we shouldn't regret or feel bad about them, but we should at least recognize that there's likely a measure of personal sacrifice involved.&lt;/p&gt;
+&lt;p&gt;To get analytical, open source is an economy. And like any economy there are &amp;quot;currencies&amp;quot;. In this case, the currency is often intangible. Open source maintainers do what they do for a variety of reasons. I suspect that while working on open source is a selfless act for many maintainers, it's not entirely so. There are other currencies involved. Some maintainers would like name recognition. Some seek approval or acceptance. Some believe it will have indirect monetary benefits like helping to land a better job. In all of these cases, there's an expectation that the consumers of open source will end up paying that currency in one way or another in exchange for the work provided. The fact that this exchange is both assumed and poorly defined is a problem for a different blog post, but it's there regardless.&lt;/p&gt;
+&lt;p&gt;The point I'm trying to make is that different &amp;quot;currencies&amp;quot; like approval, name recognition, acceptance, and networking all have a basis in personal interactions...or to put it another way: &lt;em&gt;feelings&lt;/em&gt;. We &lt;em&gt;can't&lt;/em&gt; separate feelings from open source because feelings are intrinsic in the assumed exchange between maintainers and consumers. To ignore them is to ignore a large part of the implicit contract that's present in open source, whether we like it or not. One thing we can all do, maintainers and consumers alike, to strengthen our open source communities is to recognize the presence and value of feelings...of humanity...in this system, accept it, and integrate that understanding into our interactions.&lt;/p&gt;
+&lt;p&gt;So to come back to the original discussion about presenting alternatives, does this mean we should never talk about how one tool is better than another? That we should never present comparisons or pros and cons? Absolutely not, that's absurd. The case I'm making is to be softer in our approach. To realize that the words you use and the phrasing of your advice has a real impact and actual consequences on the very software community you're trying to improve. That in the equation of how to discuss open source we have to account for the feelings of maintainers as one of many variables instead of dismissing them as irrelevant. Sometimes...many times...that's just a matter of phrasing or presentation. For example, instead of talking about why a tool is bad, try talking about why it's good first. Instead of explaining why you &lt;em&gt;wouldn't&lt;/em&gt; use something, try explaining why you &lt;em&gt;would&lt;/em&gt; first. Write comparison tables with both cons &lt;em&gt;and&lt;/em&gt; pros. Treat discussions about open source as if you were personally discussing the maintainers themselves, because for them it often is personal. In other words: a little kindness and empathy goes a long way.&lt;/p&gt;
+</content>
+		<summary>The personal blog of Dave Glick</summary>
+	</entry>
+	<entry>
+		<id>https://daveaglick.com/posts/announcing-azurepipelines-testlogger</id>
+		<title>Announcing AzurePipelines.TestLogger</title>
+		<link href="https://daveaglick.com/posts/announcing-azurepipelines-testlogger" />
+		<link rel="enclosure" type="image" href="https://daveaglick.com/images/test-tubes.jpg" />
+		<updated>2018-12-17T00:00:00Z</updated>
+		<content>&lt;p&gt;In today's episode of "what crazy niche has Dave gotten sucked into this time?" I announce a new test logger for the Visual Studio Test Platform designed to publish your test results in real-time to Azure Pipelines. This means that you can run &lt;code&gt;dotnet test&lt;/code&gt; from your build script on Azure Pipelines and feed your test results directly to the test summary for your build without having to rely on post-processing like the &lt;code&gt;PublishTestResults&lt;/code&gt; Azure Pipelines task.&lt;/p&gt;
+&lt;p&gt;Before we get to publishing results to Azure Pipelines, let's back up a step and briefly consider what a Visual Studio Test Platform test logger actually is. &lt;a href="https://github.com/Microsoft/vstest-docs/blob/master/docs/report.md"&gt;According to the official docs&lt;/a&gt;, "A test logger is a test platform extension to control reporting of test results.". That's not particularly helpful. What it really means is that you can write a library to hook into what's happening with your test run and do something with that information. The API for this isn't great or well documented, basically a single interface with a few event handlers, but it's enough to get details about each test run.&lt;/p&gt;
+&lt;p&gt;The AzurePipelines.TestLogger then registers handlers for these test events, builds a heirarchy from the test and source (I.e., file) names, and publishes that to Azure Pipelines while your tests are running using the &lt;a href="https://docs.microsoft.com/en-us/rest/api/azure/devops/?view=azure-devops-rest-5.0"&gt;Azure DevOps REST API&lt;/a&gt;. There were some tricky parts such as figuring out which version of the API to specify for which endpoint (each endpoint is versioned a little differently, particularly with preview versions). Getting some of the Azure Pipelines-specific data like nested test results and parent test durations to work was also a challenge. Now that I've worked through everything, I rather like the result:&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/test-summary.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;Each test "run" is shown at the root of the result tree (a run is the combination of test assembly and build job/agent). Then each test fixture or class is shown at the second level with it's fully qualified name (minus the root namespace). Nested classes are shown with &lt;code&gt;+&lt;/code&gt; notation. Then individual tests are displayed at the third level. This three-deep heirarchy keeps very large test runs nice and tidy. On the downside, the Azure Pipelines test summary will only show statistics for top-level tests. That's not ideal for a logger that nests results like this one, but the clarity of grouping tests under their fixture is more valuable than listing a correct total in the test summary in my opinion. Thankfully the pass/fail will still "bubble up" so even though the summary may show fewer tests than actually exist, it'll still correctly indicate if any tests are failing (which would then require a drill-down to figure out which ones are failing). &lt;a href="https://developercommunity.visualstudio.com/content/idea/409015/show-all-tests-in-the-hierarchy-in-test-summary.html"&gt;There's an open feature suggestion here for showing all nested tests in the summary&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;If you're using .NET and Azure Pipelines and you need this in your life, &lt;a href="https://github.com/daveaglick/AzurePipelines.TestLogger"&gt;head on over to the GitHub repository&lt;/a&gt; for installation and usage instructions. Happy testing.&lt;/p&gt;
+</content>
+		<summary>The personal blog of Dave Glick</summary>
+	</entry>
+	<entry>
+		<id>https://daveaglick.com/posts/code-from-your-phone</id>
+		<title>Code From Your Phone</title>
+		<link href="https://daveaglick.com/posts/code-from-your-phone" />
+		<link rel="enclosure" type="image" href="https://daveaglick.com/images/phone.jpg" />
+		<updated>2018-11-19T00:00:00Z</updated>
+		<content>&lt;p&gt;I've long been a fan of &lt;a href="https://daveaglick.com/posts/development-on-the-go"&gt;mobile development workflows&lt;/a&gt;. I've also been interested in the convergence of .NET Core on Linux and containers as a way to enable rapid, self-contained .NET development environments. It turns out that updates to mobile tools, improved container hosting, and a little elbow grease can create a very nice mobile development setup that includes the ability to easily work with GitHub and git, edit files, and run builds and unit tests all from your phone or tablet (assuming your phone or tablet is running iOS - someone else will have to figure out how to do this on Android).&lt;/p&gt;
+&lt;h1 id="the-tools"&gt;The Tools&lt;/h1&gt;
+&lt;p&gt;First let's look at the tools that we're going to use to make this possible.&lt;/p&gt;
+&lt;h2 id="codeanywhere"&gt;Codeanywhere&lt;/h2&gt;
+&lt;p&gt;I've had my eye on the &lt;a href="https://codeanywhere.com/"&gt;Codeanywhere&lt;/a&gt; service for a while, but it wasn't until recently with a refreshed app and updated containers that it really made sense for .NET development. I've happy to report it's been working very well for me now. This will provide the containers we're going to use for development, but more importantly, it's going to provide out-of-the-box SSH access and a fantastic app for managing our containers and interacting with the terminal.&lt;/p&gt;
+&lt;p&gt;While Codeanywhere does have free plans that might work for you, I'm going to suggest the "Freelancer" plan which provides more functionality and most importantly, provides increased container disk quotas (which can be an issue with .NET development). It runs about $84/year (or $10/month) which is well worth it in my opinion if you're serious about mobile development.&lt;/p&gt;
+&lt;h2 id="working-copy"&gt;Working Copy&lt;/h2&gt;
+&lt;p&gt;&lt;a href="https://workingcopyapp.com"&gt;Working Copy&lt;/a&gt; is an iOS git client app and it continues to improve at a rapid pace. It's great on it's own, but really shines when considering that many ways it can integrate with other apps and services. More specifically, we're going to use a new feature that was recently introduced which lets you &lt;a href="https://workingcopyapp.com/manual/ssh-upload"&gt;upload your repository to an SSH server&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 id="textastic"&gt;Textastic&lt;/h2&gt;
+&lt;p&gt;While the Codeanywhere app provides an excellent file editing experience, &lt;a href="https://www.textasticapp.com"&gt;Textastic&lt;/a&gt; integrates directly with Working Copy and since we're going to use the mobile device as the "source of truth" for our repository we need to edit files locally. Thankfully, it's also an amazing coding editor with syntax highlighting, a code-oriented keyboard, and more and only runs $10 to boot.&lt;/p&gt;
+&lt;h2 id="pricing"&gt;Pricing&lt;/h2&gt;
+&lt;p&gt;While not expensive, this isn't going to be a totally free setup either. Each of these tools are robust and well developed and rightly charge for their use. If you ask me, the cost of each is a bargain considering what they do.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Codeanywhere&lt;/strong&gt;: $84/year for the "Freelancer" plan&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Working Copy&lt;/strong&gt;: $16 for the pro unlock which enables SSH features (among many others)&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Textastic&lt;/strong&gt;: $10&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id="the-setup"&gt;The Setup&lt;/h1&gt;
+&lt;h2 id="create-your-container"&gt;Create Your Container&lt;/h2&gt;
+&lt;p&gt;The first step is to create your container on Codeanywhere. To do so, create an account, &lt;a href="https://codeanywhere.com/dashboard"&gt;open your dashboard&lt;/a&gt;, and create a new project (you might be prompted to create your first project automatically when you create your account as well). When you open your new project you'll be prompted to add a new container:&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-new-container.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;Select the Ubuntu .NET Core image (or Centos if that's your thing) and then select "Create". That's all you need to do and your new container will spin up in the background.&lt;/p&gt;
+&lt;p&gt;Once it's online you can connect to it within the app using SSH:&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-container-ssh.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;...and check the .NET Core version:&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-dotnet-version.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;h2 id="clone-into-working-copy"&gt;Clone Into Working Copy&lt;/h2&gt;
+&lt;p&gt;The next step is to clone the repository we want to work on into Working Copy. You can use Working Copy's &lt;a href="https://workingcopyapp.com/manual/hosting-provider"&gt;hosting provider integration&lt;/a&gt; or just clone straight from the repository URL:&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-clone.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;I'll use my project &lt;a href="https://github.com/daveaglick/MsBuildPipeLogger"&gt;MsBuildPipeLogger&lt;/a&gt; as an example for the rest of this post.&lt;/p&gt;
+&lt;h2 id="get-ssh-information-from-container"&gt;Get SSH Information From Container&lt;/h2&gt;
+&lt;p&gt;Now we're going to configure Working Copy to upload and synchronize changes to our container.&lt;/p&gt;
+&lt;p&gt;The first step is to figure out our SSH host. Click on the container actions button and then select "Info":&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-container-actions.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;From the info screen, look for the hostname and port and note it down:&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-container-info.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;Next we're going to get the private SSH key from our container. This is stored at &lt;code&gt;/home/cabox/.ssh/id_rsa&lt;/code&gt; (note also that the default user is &lt;code&gt;cabox&lt;/code&gt;). The easiest way to get it's contents is to copy it to your root with the command &lt;code&gt;cp /home/cabox/.ssh/id_rsa&lt;/code&gt;. Open a terminal and type that in:&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-copy-key.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;Then open that file directly from the Codeanywhere container file browser and copy it's contents to the clipboard:&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-copy-key-2.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-copy-key-3.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;Note that the Codeanywhere file editor can be a little finicky and you might have to try to get the whole file contents within the text selector a couple times before you get everything. The goal is to get your private key onto the iOS clipboard where Working Copy can get to it.&lt;/p&gt;
+&lt;h2 id="configure-working-copy-for-ssh-upload"&gt;Configure Working Copy for SSH Upload&lt;/h2&gt;
+&lt;p&gt;Now we're going to move over to Working Copy and add our SSH key. Open the settings from the upper-right gear icon and then select "SSH Keys":&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-ssh-keys.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;Then add the SSH key we copied from Codeanywhere by clicking the + icon in the upper-right and selecting "Import from Clipboard":&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-import-ssh.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;Once you're done you should see the new key in the list of keys.&lt;/p&gt;
+&lt;p&gt;Now we'll add SSH Upload support to the repository we cloned. This will make Working Copy synchronize all changes within the app to the remote container. To add SSH support, open the repository and then click on the repository "Status and Configuration":&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-repo-config.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;Then click the iOS action button in the upper-right corner and select "SSH Upload" from the list of actions:&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-repo-actions.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;Once you add the SSH host and port, Working Copy will ask if you want to accept the server key and then ask you to authenticate. Use &lt;code&gt;cabox&lt;/code&gt; as the username and leave the password blank to use the SSH key you just added to Working Copy.&lt;/p&gt;
+&lt;p&gt;Once that's done, we'll select the remote folder we want to synchronize to. Select the folder icon next to "Remote" to open the folder selection:&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-ssh-folder.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;Then select "workspace" and add a new subfolder for our files:&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-ssh-new-folder.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;When you're all ready, select the "Upload" button to initiate the synchronization:&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-upload.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;h2 id="edit-files"&gt;Edit Files&lt;/h2&gt;
+&lt;p&gt;Now let's switch gears a little bit and edit one of our files like the readme. Open the Textastic app, select "Open..." and then select Working Copy as the location to open files from:&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-open-folder.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;That will show folders for each of the repositories in Working Copy. Select "Select" from the top menu, highlight the repository folder you want to open, and then select "Open" from the top menu:&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-select-folder.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;That will add the folder to Textastic and allow you to open and edit files in it:&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-edit-file.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;h2 id="synchronize-changes"&gt;Synchronize Changes&lt;/h2&gt;
+&lt;p&gt;After you've edited some files, switch back to Working Copy. You'll probaby get a message about no longer being able to upload in the background. That's okay, just open the SSH settings from the terminal icon in the upper-right corner (if they're not already open), and select "Upload" to initiate the synchronization.&lt;/p&gt;
+&lt;p&gt;Now that the files are saved into Working Copy from Textastic, you can also initiate git commands such as committing your changes before or after you work with the files from your container.&lt;/p&gt;
+&lt;h2 id="open-terminal-to-run-a-build"&gt;Open Terminal To Run A Build&lt;/h2&gt;
+&lt;p&gt;The last thing we'll do is switch back to Codeanywhere to open a terminal and run a build with our newly changed files. Open the SSH terminal for your container from within Codeanywhere and the folder you created from Working Copy should now be there:&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-sync-folder.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;As with any bash prompt, you can open the folder and run a build:&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-build.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;h1 id="alternate-setups"&gt;Alternate Setups&lt;/h1&gt;
+&lt;p&gt;What I've described is only one way you could use these tools. Some alternatives include:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Do everything from the Codeanywhere app. It includes the ability to browse the file structure in your container and edit files with a nice coding keyboard directly from the app. The downside is you'll need to manage all your git commands yourself from the command line which can get cumbersome from a mobile device.&lt;/li&gt;
+&lt;li&gt;Set up &lt;a href="https://workingcopyapp.com/manual/ssh-command"&gt;SSH Commands&lt;/a&gt; in Working Copy to let you run build or other commands directly from the app. This might be preferable to switching over to the Codeanywhere app for commonly run commands.&lt;/li&gt;
+&lt;/ul&gt;
+</content>
+		<summary>The personal blog of Dave Glick</summary>
+	</entry>
+	<entry>
+		<id>https://daveaglick.com/posts/pushing-packages-from-azure-pipelines-to-azure-artifacts-using-cake</id>
+		<title>Pushing Packages From Azure Pipelines To Azure Artifacts Using Cake</title>
+		<link href="https://daveaglick.com/posts/pushing-packages-from-azure-pipelines-to-azure-artifacts-using-cake" />
+		<link rel="enclosure" type="image" href="https://daveaglick.com/images/cake.jpg" />
+		<updated>2018-11-06T00:00:00Z</updated>
+		<content>&lt;p&gt;This is a short post about using &lt;a href="https://cakebuild.net"&gt;Cake&lt;/a&gt; to publish packages from &lt;a href="https://azure.microsoft.com/en-us/services/devops/pipelines"&gt;Azure Pipelines&lt;/a&gt; to &lt;a href="https://azure.microsoft.com/en-us/services/devops/artifacts"&gt;Azure Artifacts&lt;/a&gt; that took me the better part of a day to figure out. For completness I'll walk through my entire process but if you just want to know how to do it, skip to the end.&lt;/p&gt;
+&lt;p&gt;I've been a very happy user of &lt;a href="https://www.appveyor.com/"&gt;AppVeyor&lt;/a&gt; and &lt;a href="https://www.myget.org/"&gt;MyGet&lt;/a&gt; for my open source work. At my day job we use an on-premesis &lt;a href="https://www.atlassian.com/software/bamboo"&gt;Bamboo&lt;/a&gt; server which also sends packages to MyGet. In both cases, publishing a package from a Cake build script is relativly straightforward and basically involves getting an API key from MyGet and feeding that to the Cake &lt;a href="https://cakebuild.net/api/Cake.Common.Tools.NuGet/NuGetAliases/08163C34"&gt;&lt;code&gt;NuGetPush&lt;/code&gt;&lt;/a&gt; alias. Now that I'm investigating moving some of the workloads at my day job to &lt;a href="https://dev.azure.com/"&gt;Azure DevOps services&lt;/a&gt;, I'm finding this simple task isn't so straightforward.&lt;/p&gt;
+&lt;h1 id="personal-access-token"&gt;Personal Access Token&lt;/h1&gt;
+&lt;p&gt;My first attempt was to get an &lt;a href="https://docs.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate"&gt;Azure DevOps personal access token&lt;/a&gt; with package management grants and feed that to the &lt;code&gt;NuGetPush&lt;/code&gt; Cake alias, just like I was used to doing with MyGet. That resulted in error messages that look like this:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Unable to load the service index for source https://pkgs.dev.azure.com/xyz/_packaging/xyz/nuget/v3/index.json.
+Response status code does not indicate success: 401 (Unauthorized).
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;After that, I took the most resonable first troubleshooting step...and ranted on Twitter:&lt;/p&gt;
+&lt;blockquote class="twitter-tweet" data-partner="tweetdeck"&gt;&lt;p lang="en" dir="ltr"&gt;Good grief. I always feel so dumb when trying to do anything with Azure. Can&amp;#39;t figure out how to push a package from Azure Pipelines to Azure Artifacts using an API key. And no, I don&amp;#39;t want to setup and use a special credential provider. This was so easy with AppVeyor/MyGet.&lt;/p&gt;&amp;mdash; Dave Glick (&amp;#64;daveaglick) &lt;a href="https://twitter.com/daveaglick/status/1059801965415272448?ref_src=twsrc%5Etfw"&gt;November 6, 2018&lt;/a&gt;&lt;/blockquote&gt;
+&lt;p&gt;Unfortunatly the answer wasn't what I wanted to see:&lt;/p&gt;
+&lt;blockquote class="twitter-tweet" data-conversation="none" data-cards="hidden" data-partner="tweetdeck"&gt;&lt;p lang="en" dir="ltr"&gt;Thanks for the feedback. There are some under-the-hood reasons why we don&amp;#39;t support apikey. But, Azure Pipelines has a &amp;quot;NuGet&amp;quot; task (or &amp;quot;.NET Core&amp;quot; if you prefer) that will automatically authenticate to Azure Artifacts for both push and restore.&lt;/p&gt;&amp;mdash; Alex Mullans (&amp;#64;alexmullans) &lt;a href="https://twitter.com/alexmullans/status/1059811282851905536?ref_src=twsrc%5Etfw"&gt;November 6, 2018&lt;/a&gt;&lt;/blockquote&gt;
+&lt;p&gt;It turns out that you can't use a personal access token as an API key to publish packages to Azure Artifacts.&lt;/p&gt;
+&lt;h1 id="credential-provider"&gt;Credential Provider&lt;/h1&gt;
+&lt;p&gt;My next step was to take a look at the &lt;a href="https://github.com/Microsoft/artifacts-credprovider"&gt;VSTS Credential Provider&lt;/a&gt;. It's essentially &lt;a href="https://docs.microsoft.com/en-us/azure/devops/artifacts/get-started-nuget#publish-a-package"&gt;the only documented way of publishing a package&lt;/a&gt;. Thankfully the credential provider is on NuGet as &lt;a href="https://www.nuget.org/packages/Microsoft.VisualStudio.Services.NuGet.CredentialProvider"&gt;Microsoft.VisualStudio.Services.NuGet.CredentialProvider&lt;/a&gt; so you can add it as a tool to your Cake script:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;#tool &amp;quot;nuget:?package=Microsoft.VisualStudio.Services.NuGet.CredentialProvider&amp;amp;version=0.37.0&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Once you've installed it, you need to tell NuGet where to find it. Fortunatly there's an environment variable called &lt;code&gt;NUGET_CREDENTIALPROVIDERS_PATH&lt;/code&gt; that NuGet uses to find credential providers. We can set it from our Cake script like this:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;var credentialProviderPath = GetFiles(&amp;quot;**/CredentialProvider.VSS.exe&amp;quot;).First().FullPath;
+Information(&amp;quot;Setting NUGET_CREDENTIALPROVIDERS_PATH to &amp;quot; + credentialProviderPath);
+System.Environment.SetEnvironmentVariable(&amp;quot;NUGET_CREDENTIALPROVIDERS_PATH&amp;quot;, credentialProviderPath, EnvironmentVariableTarget.Machine);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Less fortunatly, this doesn't seem to work at all. In fact, I couldn't get NuGet to recognize the &lt;code&gt;NUGET_CREDENTIALPROVIDERS_PATH&lt;/code&gt; environment variable no matter how it was set (and I tried everything, including using the &lt;code&gt;NuGetPushSettings.EnvironmentVariables&lt;/code&gt; property). That led to just copying the credential provider alongside &lt;code&gt;nuget.exe&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;var credentialProviderPath = GetFiles(&amp;quot;**/CredentialProvider.VSS.exe&amp;quot;).First().FullPath;
+var nugetPath = GetFiles(&amp;quot;**/nuget.exe&amp;quot;).First().GetDirectory();
+CopyFiles(new [] { credentialProviderPath }, nugetPath);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;This allowed NuGet to find the credential provider, but at that point I couldn't figure out how to automatically get it to authenticate:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;CredentialProvider.VSS: Getting new credentials for source:https://pkgs.dev.azure.com/xyz/_packaging/xyz/nuget/v3/index.json, scope:vso.packaging_write vso.drop_write
+CredentialProvider.VSS: Couldn't get an authentication token for https://pkgs.dev.azure.com/xyz/_packaging/xyz/nuget/v3/index.json.
+Unable to load the service index for source https://pkgs.dev.azure.com/xyz/_packaging/xyz/nuget/v3/index.json.
+Response status code does not indicate success: 401 (Unauthorized).
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Most of the documentation talks about using the credential provider interactivly, either by displaying a UI or prompting for credentials on the command line. I'm sure there's a way to make this work from a script, but I was getting pretty frustrated with the credential provider at this point.&lt;/p&gt;
+&lt;h1 id="system.accesstoken"&gt;System.AccessToken&lt;/h1&gt;
+&lt;p&gt;I was tipped off by my Cake buddies to some blog posts from &lt;a href="https://kevsoft.net/2018/08/06/configuring-private-vsts-nuget-feeds-with-cake.html"&gt;Kevin Smith&lt;/a&gt; and &lt;a href="https://tech.trailmax.info/2017/01/publish-to-vsts-nuget-feed-from-cakebuild/"&gt;Max Vasilyev&lt;/a&gt; about using OAuth tokens for publishing to VSTS. It turns out Azure Pipelines exposes a special pipeline variable named &lt;code&gt;System.AccessToken&lt;/code&gt; that contains an OAuth key for the VSTS/Azure DevOps REST API. &lt;a href="https://docs.microsoft.com/en-us/azure/devops/pipelines/process/variables#systemaccesstoken"&gt;You have to manually activate it from your YAML file&lt;/a&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;variables:
+  SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;That &lt;em&gt;should&lt;/em&gt; provide access to a &lt;code&gt;SYSTEM_ACCESSTOKEN&lt;/code&gt; environment variable from inside your scripts, but...wait for it...:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Could not resolve SYSTEM_ACCESSTOKEN
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Bet you saw that coming. For some reason, I couldn't figure out how to set the enviornment variable globally, but I was able to set it at the script level:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;steps:
+ - script: build -target Publish
+   env:
+     SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Once that's done, you can register a NuGet feed from inside your Cake script using the access token and then use it when publishing a package. Here's my working package publishing task inside my Cake script:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Task(&amp;quot;Publish&amp;quot;)
+    .IsDependentOn(&amp;quot;Pack&amp;quot;)
+    .WithCriteria(() =&amp;gt; isRunningOnBuildServer)
+    .Does(() =&amp;gt;
+    {
+        // Get the access token
+        var accessToken = EnvironmentVariable(&amp;quot;SYSTEM_ACCESSTOKEN&amp;quot;);
+        if (string.IsNullOrEmpty(accessToken))
+        {
+            throw new InvalidOperationException(&amp;quot;Could not resolve SYSTEM_ACCESSTOKEN.&amp;quot;);
+        }
+
+        // Add the authenticated feed source
+        NuGetAddSource(
+            &amp;quot;VSTS&amp;quot;,
+            &amp;quot;https://pkgs.dev.azure.com/xyz/_packaging/xyz/nuget/v3/index.json&amp;quot;,
+            new NuGetSourcesSettings
+            {
+                UserName = &amp;quot;VSTS&amp;quot;,
+                Password = accessToken
+            });
+
+        foreach (var nupkg in GetFiles(buildDir.Path.FullPath + &amp;quot;/*.nupkg&amp;quot;))
+        {
+            NuGetPush(nupkg, new NuGetPushSettings 
+            {
+                Source = &amp;quot;VSTS&amp;quot;,
+                ApiKey = &amp;quot;VSTS&amp;quot;
+            });
+        }
+    });
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Note the use of &amp;quot;VSTS&amp;quot; for &lt;code&gt;UserName&lt;/code&gt; and &lt;code&gt;ApiKey&lt;/code&gt;. That's basically a dummy value - NuGet requires &lt;em&gt;something&lt;/em&gt; for those properties but it doesn't really care what. The important part is that the &lt;code&gt;SYSTEM_ACCESSTOKEN&lt;/code&gt; environment variable is being used as the &lt;code&gt;Password&lt;/code&gt; for the &lt;code&gt;NuGetSourcesSettings&lt;/code&gt;, and that the name of the new source matches the &lt;code&gt;Source&lt;/code&gt; property in the &lt;code&gt;NuGetPushSettings&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Hopefully this post saves you a bit of time. Once it's set up it appears to work well, but discovering the &amp;quot;right way&amp;quot; of doing this took longer than it should have (if this even is the right way).&lt;/p&gt;
+&lt;script async src="https://platform.twitter.com/widgets.js" charset="utf-8"&gt;&lt;/script&gt;
+</content>
+		<summary>The personal blog of Dave Glick</summary>
+	</entry>
+	<entry>
+		<id>https://daveaglick.com/posts/the-bleeding-edge-of-razor</id>
+		<title>The Bleeding Edge Of Razor</title>
+		<link href="https://daveaglick.com/posts/the-bleeding-edge-of-razor" />
+		<link rel="enclosure" type="image" href="https://daveaglick.com/images/razor.jpg" />
+		<updated>2018-10-22T00:00:00Z</updated>
+		<content>&lt;p&gt;Over the years there's been a number of projects designed to make using Razor templates from your own code easier. For a while, these third-party libraries were the only way to easily use Razor outside ASP.NET MVC because using the ASP.NET code directly was too complicated. That started to change with ASP.NET Core and the ASP.NET team has slowly started to address this use case. In this post we'll take a look at the current bleeding edge of Razor and how you can use it today to enable template rendering in your own application.&lt;/p&gt;
+&lt;p&gt;Before we start looking at code, let's back up a step and consider what Razor is (and what it isn't). At it's core, Razor is a templating language. Templating languages are designed to make producing output content easier by intermixing raw output with instructions on how to generate additional programmatically-based output. In this case, Razor is used to produce HTML documents. An important distinction that I want to make here is that Razor &lt;em&gt;is not&lt;/em&gt; the set of HTML helpers and other support functionality that comes along with ASP.NET MVC. For example, helpers like &lt;code&gt;Html.Partial()&lt;/code&gt; and page directives like &lt;code&gt;&amp;#64;section&lt;/code&gt; aren't part of the Razor language. Instead they're shipped with ASP.NET MVC as additional support on top of Razor, which your Razor code can use.&lt;/p&gt;
+&lt;p&gt;This distinction wasn't always clear, but recently the ASP.NET team has been focusing on separating Razor &lt;em&gt;the language&lt;/em&gt; from Razor &lt;em&gt;for ASP.NET MVC&lt;/em&gt;. This is partly out of necessity as Razor has grown to support at least three different dialects (ASP.NET MVC, Razor Pages, and Blazor), but it also makes using Razor for your own purposes easier too.&lt;/p&gt;
+&lt;h1 id="rendering-phases"&gt;Rendering Phases&lt;/h1&gt;
+&lt;p&gt;Turning Razor content from a string, file, or other source into final rendered HTML requires several phases:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Generating C# code from the template&lt;/li&gt;
+&lt;li&gt;Compiling the C# code into an assembly&lt;/li&gt;
+&lt;li&gt;Loading the assembly into memory&lt;/li&gt;
+&lt;li&gt;Executing your compiled template&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;I'll discuss each phase in more detail below. Before I do, note that Razor is under heavy development (and has been for a while). Even though a lot of the API is surfaced as public, it's been known to break in subtle ways between releases. On top of that, I learned most of this through trial-and-error and reverse engineering and make no assurances that this is the canonical way or even a correct way of doing any of this. You've been warned.&lt;/p&gt;
+&lt;h2 id="generating-code"&gt;Generating Code&lt;/h2&gt;
+&lt;p&gt;A Razor template starts life as a string (or file) with intermixed HTML, C# code, and Razor directives. You can think of this template as a little program that takes input like your page model and outputs the resulting HTML. Like any program it needs to be compiled and executed. The first part of this process essentially &amp;quot;inverts&amp;quot; the HTML and C# code in the template and creates C# code that &amp;quot;prints&amp;quot; the HTML parts of your template along with the raw code that you added to your template.&lt;/p&gt;
+&lt;p&gt;This phase is where a lot of the recent work in Razor has been focused. It used to be that the process of converting a Razor template to C# code happened as part of the overall MVC Razor processing. Now, a series of libraries under &lt;code&gt;Microsoft.AspNetCore.Razor.Language&lt;/code&gt; separates Razor &lt;em&gt;the language&lt;/em&gt; from Razor &lt;em&gt;for ASP.NET MVC&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;Here's how to take a Razor template stored in the file &lt;code&gt;C:\Code\RazorExample\date.cshtml&lt;/code&gt; and generate C# from it (you'll need to add the &lt;code&gt;Microsoft.AspNetCore.Razor.Language&lt;/code&gt; package to get access to these classes):&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;RazorConfiguration config = RazorConfiguration.Default;
+RazorProjectFileSystem projectFileSystem =
+  RazorProjectFileSystem.Create(&amp;#64;&amp;quot;C:\Code\RazorExample&amp;quot;);
+RazorProjectEngine projectEngine =
+  RazorProjectEngine.Create(config, projectFileSystem);
+RazorProjectItem projectItem = projectFileSystem.GetItem(&amp;quot;date.cshtml&amp;quot;);
+RazorTemplateEngine templateEngine =
+  new RazorTemplateEngine(projectEngine.Engine, projectFileSystem);
+RazorCodeDocument codeDocument = templateEngine.CreateCodeDocument(projectItem);
+RazorCSharpDocument cSharpDocument = templateEngine.GenerateCode(codeDocument);         
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Given a &lt;code&gt;data.cshtml&lt;/code&gt; file that looks like this:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;&amp;lt;p&amp;gt;&amp;#64;DateTime.Now&amp;lt;/p&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;This will produce the following C# code in &lt;code&gt;cSharpDocument.GeneratedCode&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;#pragma checksum &amp;quot;E:\Code\NewRazor\date.cshtml&amp;quot; &amp;quot;{ff1816ec-aa5e-4d10-87f7-6f4963833460}&amp;quot; &amp;quot;7dea33102781d0fc7059874abc785e31de14ef37&amp;quot;
+// &amp;lt;auto-generated/&amp;gt;
+#pragma warning disable 1591
+[assembly: global::Microsoft.AspNetCore.Razor.Hosting.RazorCompiledItemAttribute(typeof(Razor.Template), &amp;#64;&amp;quot;default&amp;quot;, &amp;#64;&amp;quot;/date.cshtml&amp;quot;)]
+namespace Razor
+{
+    #line hidden
+    [global::Microsoft.AspNetCore.Razor.Hosting.RazorSourceChecksumAttribute(&amp;#64;&amp;quot;SHA1&amp;quot;, &amp;#64;&amp;quot;7dea33102781d0fc7059874abc785e31de14ef37&amp;quot;, &amp;#64;&amp;quot;/date.cshtml&amp;quot;)]
+    public class Template
+    {
+        #pragma warning disable 1998
+        public async override global::System.Threading.Tasks.Task ExecuteAsync()
+        {
+            WriteLiteral(&amp;quot;&amp;lt;p&amp;gt;&amp;quot;);
+#line 1 &amp;quot;E:\Code\NewRazor\date.cshtml&amp;quot;
+Write(DateTime.Now);
+
+#line default
+#line hidden
+            WriteLiteral(&amp;quot;&amp;lt;/p&amp;gt;&amp;quot;);
+        }
+        #pragma warning restore 1998
+    }
+}
+#pragma warning restore 1591
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Let's break that down just a little bit...&lt;/p&gt;
+&lt;p&gt;The &lt;code&gt;RazorProjectFileSystem&lt;/code&gt; is responsible for presenting available files and their content to the Razor engine. It's primary job is to create &lt;code&gt;RazorProjectItem&lt;/code&gt; instances given a path. These &lt;code&gt;RazorProjectItem&lt;/code&gt; objects contain metadata about the requested file as well as access to a &lt;code&gt;Stream&lt;/code&gt; (if the file exists). The default &lt;code&gt;RazorProjectFileSystem&lt;/code&gt; obtained by the call to &lt;code&gt;RazorProjectFileSystem.Create(string root)&lt;/code&gt; is aptly named &lt;code&gt;DefaultRazorProjectFileSystem&lt;/code&gt; and wraps &lt;code&gt;System.IO&lt;/code&gt; classes like &lt;code&gt;FileInfo&lt;/code&gt; and &lt;code&gt;FileStream&lt;/code&gt;. If you want to access files differently (like from a database), you'll need to implement your own &lt;code&gt;RazorProjectFileSystem&lt;/code&gt; and &lt;code&gt;RazorProjectItem&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;The &lt;code&gt;RazorProjectEngine&lt;/code&gt; is the workhorse here. It slices up your template, applies a sequence of processing phases to it to construct a syntax tree, and then lowers that syntax tree into C#. If you need to adjust the way Razor generates your code, it'll probably be through the &lt;code&gt;RazorProjectEngine&lt;/code&gt;. In future posts I'll probably take a look at some of these possibilities.&lt;/p&gt;
+&lt;p&gt;Like the &lt;code&gt;RazorProjectEngine&lt;/code&gt;, the &lt;code&gt;RazorTemplateEngine&lt;/code&gt; also participates in generating code. It's main job is essentially to add imports and other required functionality to your generated code and then defer to the &lt;code&gt;RazorProjectEngine&lt;/code&gt; for processing of the syntax tree.&lt;/p&gt;
+&lt;p&gt;Finally, &lt;code&gt;RazorCodeDocument&lt;/code&gt; contains the abstract representation of your template and &lt;code&gt;RazorCSharpDocument&lt;/code&gt; contains the final produced C# code.&lt;/p&gt;
+&lt;h2 id="compiling-the-code"&gt;Compiling The Code&lt;/h2&gt;
+&lt;p&gt;Now that we have some C# code, we need to compile it. We're done with the Razor language bits (at least for now) and we'll use Roslyn to compile our code:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;SourceText sourceText = SourceText.From(cSharpDocument.GeneratedCode, Encoding.UTF8);
+SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(sourceText);
+CSharpCompilationOptions compilationOptions =
+    new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
+        .WithSpecificDiagnosticOptions(
+            new Dictionary&amp;lt;string, ReportDiagnostic&amp;gt;
+            {
+                // Binding redirects
+                { &amp;quot;CS1701&amp;quot;, ReportDiagnostic.Suppress },
+                { &amp;quot;CS1702&amp;quot;, ReportDiagnostic.Suppress },
+                { &amp;quot;CS1705&amp;quot;, ReportDiagnostic.Suppress },
+                { &amp;quot;CS8019&amp;quot;, ReportDiagnostic.Suppress }
+            });
+CSharpCompilation compilation =
+    CSharpCompilation.Create(
+        &amp;quot;RazorTest&amp;quot;,
+        options: compilationOptions,
+        references: GetMetadataReferences())
+    .AddSyntaxTrees(syntaxTree);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;In the first step we're loading the code in &lt;code&gt;cSharpDocument.GeneratedCode&lt;/code&gt; into a Roslyn &lt;code&gt;SourceText&lt;/code&gt; and then constructing a Roslyn &lt;code&gt;SyntaxTree&lt;/code&gt; from it (which is different than a Razor syntax tree).&lt;/p&gt;
+&lt;p&gt;In the next statement, we're creating the options for our compilation. Specifically, we want to produce a library so we use &lt;code&gt;OutputKind.DynamicallyLinkedLibrary&lt;/code&gt; and then turn off certain diagnostics that we know will be troublesome (you can adjust the list of suppressed diagnostics however you see fit).&lt;/p&gt;
+&lt;p&gt;In the last statement we prepare the code for compilation by using a Roslyn &lt;code&gt;CSharpCompilation&lt;/code&gt;. This uses a factory &lt;code&gt;.Create()&lt;/code&gt; method that takes a variety of arguments. In the code above, we're passing the name of the assembly (&amp;quot;RazorTest&amp;quot;), the options we created in the statement above, and a list of references we got by calling &lt;code&gt;GetMetadataReferences()&lt;/code&gt; (more on that in just a second). The last call to our new &lt;code&gt;CSharpCompilation&lt;/code&gt; object adds the syntax tree we constructed earlier.&lt;/p&gt;
+&lt;p&gt;As with any compiled code, the compiler needs to reference other libraries to find functionality. Some of these are in-the-box code libraries (like CoreFx) and others are your own assemblies that your Razor template uses. I separated this part into a &lt;code&gt;GetMetadataReferences()&lt;/code&gt; method to keep the code clean:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;private static List&amp;lt;MetadataReference&amp;gt; GetMetadataReferences() =&amp;gt;
+    new List&amp;lt;MetadataReference&amp;gt;()
+    {
+        GetMetadataReference(typeof(InputTagHelper)),
+        GetMetadataReference(typeof(UrlResolutionTagHelper)),
+        GetMetadataReference(typeof(RazorCompiledItemAttribute)),
+        GetMetadataReference(typeof(IModelExpressionProvider)),
+        GetMetadataReference(typeof(IUrlHelper)),
+        GetMetadataReference(typeof(object)),
+        GetMetadataReference(typeof(DynamicAttribute)),
+        GetMetadataReference(
+            &amp;quot;System.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a&amp;quot;),
+        GetMetadataReference(
+            &amp;quot;netstandard, Version=2.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51&amp;quot;)
+    };
+
+private static MetadataReference GetMetadataReference(Type type) =&amp;gt;
+    MetadataReference.CreateFromFile(type.GetTypeInfo().Assembly.Location);
+
+private static MetadataReference GetMetadataReference(string assemblyName) =&amp;gt;
+    MetadataReference.CreateFromFile(Assembly.Load(assemblyName).Location); 
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;This code either loads assembly references by using a type that we know to be in the assembly or using the full name of the assembly (assuming the assembly binder can find it). This set of references should support a minimal Razor template compilation, but you may need to add or adjust it depending on your own template.&lt;/p&gt;
+&lt;h2 id="loading-the-assembly"&gt;Loading The Assembly&lt;/h2&gt;
+&lt;p&gt;In the interest of full disclosure, the code in the previous section doesn't actually &lt;em&gt;compile&lt;/em&gt; our template, it just sets up the Razor compiler. The actual compilation happens in this phase at the same time we emit our new template assembly to memory:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Assembly assembly;
+EmitOptions emitOptions =
+    new EmitOptions(debugInformationFormat: DebugInformationFormat.PortablePdb);
+using (MemoryStream assemblyStream = new MemoryStream())
+{
+    using (MemoryStream pdbStream = new MemoryStream())
+    {
+        EmitResult result = compilation.Emit(
+            assemblyStream,
+            pdbStream,
+            options: emitOptions);
+
+        if (!result.Success)
+        {
+            List&amp;lt;Diagnostic&amp;gt; errorsDiagnostics = result.Diagnostics
+                .Where(d =&amp;gt; d.IsWarningAsError || d.Severity == DiagnosticSeverity.Error)
+                .ToList();
+            foreach (Diagnostic diagnostic in errorsDiagnostics)
+            {
+                FileLinePositionSpan lineSpan =
+                    diagnostic.Location.SourceTree.GetMappedLineSpan(
+                        diagnostic.Location.SourceSpan);
+                string errorMessage = diagnostic.GetMessage();
+                string formattedMessage =
+                    &amp;quot;(&amp;quot;
+                    + lineSpan.StartLinePosition.Line.ToString()
+                    + &amp;quot;:&amp;quot;
+                    + lineSpan.StartLinePosition.Character.ToString()
+                    + &amp;quot;) &amp;quot;
+                    + errorMessage;
+                Console.WriteLine(formattedMessage);
+            }
+            return;
+        }
+
+        assemblyStream.Seek(0, SeekOrigin.Begin);
+        pdbStream.Seek(0, SeekOrigin.Begin);
+
+        assembly = Assembly.Load(assemblyStream.ToArray(), pdbStream.ToArray());
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Most of the work here happens in the &lt;code&gt;compilation.Emit()&lt;/code&gt; method. We pass it an options object that tells it we want to produce a portable PDB (which will get embedded in the in-memory assembly and can be used for debugging the template). This method compiles and serializes the assembly to a stream.&lt;/p&gt;
+&lt;p&gt;The bulk of the code here deals with error reporting. Once the compilation and emit is done, the &lt;code&gt;EmitResult&lt;/code&gt; object will contain a &lt;code&gt;Success&lt;/code&gt; property that tells you if the compilation was successful. If it wasn't, you can get compilation errors by examining the &lt;code&gt;EmitResult.Diagnostics&lt;/code&gt; property. The rest of the code above just formats a nice message using Roslyn line span information (normally, I'd create &lt;code&gt;formattedMessage&lt;/code&gt; using string interpolation, but I used string concatenation instead to make it clearer what's going on for this post).&lt;/p&gt;
+&lt;p&gt;Finally, we reset the assembly and PDF streams to the start (now that Roslyn has written to them) and pass them to &lt;code&gt;Assembly.Load()&lt;/code&gt; to construct an in-memory assembly we can use in the next phase.&lt;/p&gt;
+&lt;h2 id="executing-the-template"&gt;Executing The Template&lt;/h2&gt;
+&lt;p&gt;At this point we have an assembly that contains the compiled version of our template. All we have to do now is run it:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;RazorCompiledItemLoader loader = new RazorCompiledItemLoader();
+RazorCompiledItem item = loader.LoadItems(assembly).SingleOrDefault();
+RazorPage&amp;lt;dynamic&amp;gt; page = (RazorPage&amp;lt;dynamic&amp;gt;)Activator.CreateInstance(item.Type);
+TextWriter writer = new StringWriter();
+page.ViewContext = new ViewContext()
+{
+    Writer = writer
+};
+page.HtmlEncoder = HtmlEncoder.Default;
+page.ExecuteAsync().GetAwaiter().GetResult();
+Console.WriteLine(writer.ToString());
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The &lt;code&gt;RazorCompiledItemLoader&lt;/code&gt; knows how to use reflection to find the class that represents your template in the assembly. Information about that class gets returned as a &lt;code&gt;RazorCompiledItem&lt;/code&gt; which, among other things, contains the type of your template class.&lt;/p&gt;
+&lt;p&gt;We can create an instance of the class using &lt;code&gt;Activator&lt;/code&gt; (though you can certainly use expression trees or some other mechanism to instantiate it via reflection). By default, Razor templates inherit from &lt;code&gt;RazorPage&amp;lt;TModel&amp;gt;&lt;/code&gt; and the default model is &lt;code&gt;dynamic&lt;/code&gt; so the instance we end up with is a &lt;code&gt;RazorPage&amp;lt;dynamic&amp;gt;&lt;/code&gt; (also why we needed to make sure we loaded the assembly that contains &lt;code&gt;DynamicAttribute&lt;/code&gt; when gathering &lt;code&gt;MetadataReference&lt;/code&gt; objects, because that assembly is responsible for &lt;code&gt;dynamic&lt;/code&gt; support).&lt;/p&gt;
+&lt;p&gt;When a &lt;code&gt;RazorPage&lt;/code&gt; is executed, it requires a few things like a &lt;code&gt;ViewContext&lt;/code&gt; and a &lt;code&gt;HtmlEncoder&lt;/code&gt;. The code above creates a minimal &lt;code&gt;ViewContext&lt;/code&gt; and you'll need to populate it further if your template uses other view features like the &lt;code&gt;ViewBag&lt;/code&gt;. Then we call &lt;code&gt;RazorPage.ExecuteAsync()&lt;/code&gt; to execute the template and get rendered HTML (I call it synchronously above, but presumably you'd be calling it in an &lt;code&gt;async&lt;/code&gt; method and would &lt;code&gt;await&lt;/code&gt; the call).&lt;/p&gt;
+&lt;h1 id="bringing-it-all-together"&gt;Bringing It All Together&lt;/h1&gt;
+&lt;p&gt;Now that we've walked through how to do this on your own, it's time to mention that there are already libraries that do this for you using the new ASP.NET Core Razor engine. Two of my favorites are &lt;a href="https://github.com/mholo65/gazorator"&gt;Gazorator&lt;/a&gt; (by my friend &lt;a href="https://twitter.com/mholo65"&gt;Martin Björkström&lt;/a&gt;, without whom this post probably never would have happened) and &lt;a href="https://github.com/toddams/RazorLight"&gt;RazorLight&lt;/a&gt;. If you want to customize the process or have full control over the phases, the code above should get you started. However, if you just want to turn a Razor template into HTML I'd consider using one of these libraries to abstract all these details from your code.&lt;/p&gt;
+&lt;h1 id="but-what-about-mvc"&gt;But What About MVC?&lt;/h1&gt;
+&lt;p&gt;If you start adding MVC conventions to your templates, you'll notice they either result in failures or just plain don't work. For example, if you add a layout to your template:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;&amp;#64;{
+    Layout = &amp;quot;_MyLayout.cshtml&amp;quot;;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The layout simply won't be rendered. That's because the Razor language bits discussed above are a little bit leaky with regards to MVC. For example, the default &lt;code&gt;RazorPage&lt;/code&gt; does have a &lt;code&gt;Layout&lt;/code&gt; property so setting it in your template won't cause the compilation to fail. However, the out-of-the-box Razor language engine we use above doesn't know anything about layouts or how to render them. I'm planning on following up this post in the near future with an even deeper dive into the Razor engine where I'll discuss how to light up the MVC version of Razor you know and love and the extensibility mechanisms that are used to do so.&lt;/p&gt;
+</content>
+		<summary>The personal blog of Dave Glick</summary>
+	</entry>
+	<entry>
+		<id>https://daveaglick.com/posts/msbuild-loggers-and-logging-events</id>
+		<title>MSBuild Loggers And Logging Events</title>
+		<link href="https://daveaglick.com/posts/msbuild-loggers-and-logging-events" />
+		<link rel="enclosure" type="image" href="https://daveaglick.com/images/journal.jpg" />
+		<updated>2018-10-04T00:00:00Z</updated>
+		<content>&lt;p&gt;I recently learned all about how MSBuild logging works and was surprised at how powerful it is. I was also disappointed how little information there is on the topic (though &lt;a href="https://docs.microsoft.com/en-us/visualstudio/msbuild/logging-in-msbuild"&gt;the docs&lt;/a&gt; are quite good). In this post I'll discuss what MSBuild logging is and how you can write your own cross-platform logger that can be plugged into any build process.&lt;/p&gt;
+&lt;h1 id="logging-events"&gt;Logging Events&lt;/h1&gt;
+&lt;p&gt;When MSBuild executes it emits a sequence of events that describe the current phase and provide a whole bunch of information about it. This includes things like starting a task or target, raising a message, and warning and error output. &lt;a href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.build.framework.ieventsource#events"&gt;The current set of individual events&lt;/a&gt; is:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;BuildFinished&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;BuildStarted&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;CustomEventRaised&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;ErrorRaised&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;MessageRaised&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;ProjectFinished&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;ProjectStarted&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;StatusEventRaised&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;TargetFinished&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;TargetStarted&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;TaskFinished&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;TaskStarted&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;WarningRaised&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Don't let that relatively sparse set of events lead you to think there isn't much data to be had. Each one of these events is raised with it's own arguments, which can get quite large. For example, the &lt;code&gt;TargetStarted&lt;/code&gt; event passes a &lt;a href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.build.framework.targetstartedeventargs"&gt;&lt;code&gt;TargetStartedEventArgs&lt;/code&gt;&lt;/a&gt; class that includes:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;BuildEventContext&lt;/code&gt; with lots of data about the target location&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;Message&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;ParentTarget&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;ProjectFile&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;TargetFile&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;TargetName&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Writing a logger is all about responding to these events in different ways. In fact, the console output that you're used to seeing from MSBuild is actually generated from a &lt;a href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.build.logging.consolelogger"&gt;normal logger&lt;/a&gt; that converts these logging events into meaningful strings.&lt;/p&gt;
+&lt;h1 id="writing-a-logger"&gt;Writing A Logger&lt;/h1&gt;
+&lt;p&gt;&lt;a href="https://docs.microsoft.com/en-us/visualstudio/msbuild/build-loggers"&gt;To create your own logger&lt;/a&gt; you can either implement the &lt;a href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.build.framework.ilogger"&gt;&lt;code&gt;ILogger&lt;/code&gt;&lt;/a&gt; interface or derive from &lt;a href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.build.utilities.logger"&gt;&lt;code&gt;Logger&lt;/code&gt;&lt;/a&gt; (I recommend the latter).&lt;/p&gt;
+&lt;p&gt;Your logger will need to register for the events it wants to handle. This is done in the &lt;a href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.build.utilities.logger.initialize"&gt;&lt;code&gt;Initialize&lt;/code&gt;&lt;/a&gt; method which gives your logger an &lt;a href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.build.framework.ieventsource"&gt;&lt;code&gt;IEventSource&lt;/code&gt;&lt;/a&gt; instance. This event source contains the events that you should register handlers for (the same ones listed above, including a meta-event named &lt;a href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.build.framework.ieventsource.anyeventraised"&gt;&lt;code&gt;AnyEventRaised&lt;/code&gt;&lt;/a&gt; that calls your handler for all events).&lt;/p&gt;
+&lt;p&gt;For example, here's a simple logger that writes the start and end of each target out to the console:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-csharp"&gt;using Microsoft.Build.Framework;
+
+public class TargetLogger : Logger
+{
+	public override void Initialize(IEventSource eventSource)
+	{
+		eventSource.TargetStarted +=
+      (sender, evt) =&amp;gt; Console.WriteLine($&amp;quot;{evt.TargetName} started&amp;quot;);
+
+		eventSource.TargetFinished +=
+      (sender, evt) =&amp;gt; Console.WriteLine($&amp;quot;{evt.TargetName} finished&amp;quot;);
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h1 id="adding-your-logger-to-a-build"&gt;Adding Your Logger To a Build&lt;/h1&gt;
+&lt;p&gt;Once you've written your logger you need to compile it to an assembly and tell MSBuild to use it with the &lt;code&gt;/logger&lt;/code&gt; switch from the &lt;a href="https://docs.microsoft.com/en-us/visualstudio/msbuild/msbuild-command-line-reference"&gt;MSBuild command-line interface&lt;/a&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-cmd"&gt;msbuild /logger:TargetLogger,C:\Loggers\TargetLogger.dll ...
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h1 id="passing-parameters"&gt;Passing Parameters&lt;/h1&gt;
+&lt;p&gt;One thing that's kind of neat about the MSBuild logging API is that you can pass whatever parameters you want from the command-line through to your logger. These are exposed as a &lt;a href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.build.framework.ilogger.parameters"&gt;&lt;code&gt;Parameters&lt;/code&gt;&lt;/a&gt; property in the &lt;a href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.build.framework.ilogger"&gt;&lt;code&gt;ILogger&lt;/code&gt;&lt;/a&gt; interface. That property will contain whatever string gets used on the command-line after a &lt;code&gt;;&lt;/code&gt; when specifying the logger:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-cmd"&gt;msbuild /logger:TargetLogger,C:\Loggers\TargetLogger.dll;MyParameters,Foo,Bar ...
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Note that it's up to you to parse it however is appropriate from your &lt;code&gt;Initialize&lt;/code&gt; method.&lt;/p&gt;
+&lt;h1 id="writing-a-cross-platform-logger"&gt;Writing A Cross Platform Logger&lt;/h1&gt;
+&lt;p&gt;A challenge that I ran into was how to write a logger that could be used for both the Visual Studio version of MSBuild and the one that ships with the .NET Core SDK. These are essentially the same MSBuild, but each one targets a different runtime. The Visual Studio version of MSBuild targets .NET Framework 4.6 while the .NET Core SDK version of MSBuild targets either .NET Standard 2.0 or a close version of .NET Core (this seems to change with each SDK release). So the question is: what should your own logger target?&lt;/p&gt;
+&lt;p&gt;If you target &lt;code&gt;net46&lt;/code&gt; and try to use your logger from the .NET Core SDK you'll get a runtime error. Likewise, if you target something like &lt;code&gt;netstandard2.0&lt;/code&gt; you'll get a runtime error from the Visual Studio MSBuild. It turns out there is &lt;em&gt;one&lt;/em&gt; target that both versions of MSBuild have in common: &lt;code&gt;netstandard1.3&lt;/code&gt;. If you target your logger to &lt;code&gt;netstandard1.3&lt;/code&gt; you'll be able to use a single assembly for either MSBuild. However, if you need your logger to use APIs that aren't in .NET Standard 1.3 then you'll need to multi-target your logger and use whichever assembly is appropriate for the version of MSBuild you're using it with.&lt;/p&gt;
+&lt;h1 id="multi-processor-logging"&gt;Multi-Processor Logging&lt;/h1&gt;
+&lt;p&gt;So far I've just discussed logging a nice linear sequence of events. That all &lt;a href="https://docs.microsoft.com/en-us/visualstudio/msbuild/logging-in-a-multi-processor-environment"&gt;goes out the window&lt;/a&gt; when performing multi-processor builds. I'm not going to dive into that, at least not in this post, but it's worth keeping in mind.&lt;/p&gt;
+&lt;h1 id="logging-out-of-process"&gt;Logging Out Of Process&lt;/h1&gt;
+&lt;p&gt;The last thing I want to talk about is the potential for responding to MSBuild logging events from another process, either on the same system or even over a network. MSBuild doesn't have a built-in capability for this, so I wrote a library called &lt;a href="https://msbuildpipelogger.netlify.com/"&gt;MsBuildPipeLogger&lt;/a&gt; that can do this over an anonymous or named pipe. It abstracts the pipe mechanics from you, so you just need to create an instance of a server class and then add the &lt;code&gt;MsBuildPipeLogger.Logger&lt;/code&gt; to MSBuild. The MsBuildPipeLogger server then allows your application to receive MSBuild logging events as the build proceeds. The MSBuildPipeLogger server also implements &lt;code&gt;IEventSource&lt;/code&gt; so that you can connect a normal MSBuild logger to it as if it were running in-process directly from MSBuild.&lt;/p&gt;
+</content>
+		<summary>The personal blog of Dave Glick</summary>
+	</entry>
+	<entry>
+		<id>https://daveaglick.com/posts/announcing-discoverdotnet</id>
+		<title>Announcing Discover .NET</title>
+		<link href="https://daveaglick.com/posts/announcing-discoverdotnet" />
+		<link rel="enclosure" type="image" href="https://daveaglick.com/images/map.jpg" />
+		<updated>2018-05-22T00:00:00Z</updated>
+		<content>&lt;p&gt;After what seems like an eternity in development, I am thrilled to announce the launch of &lt;a href="https://discoverdot.net/"&gt;Discover .NET&lt;/a&gt;. The site is an attempt to improve discoverability in the .NET ecosystem by collecting information on topics like projects, issues, blogs, groups, events, and resources.&lt;/p&gt;
+&lt;blockquote class="twitter-tweet" data-lang="en"&gt;&lt;p lang="en" dir="ltr"&gt;Discoverability is definitely part of the equation. How can we expose other devs who would get value, especially those who aren’t on the social sites, to cool projects like yours? Still lots of room for improvement in that area.&lt;/p&gt;— Dave Glick (@daveaglick) &lt;a href="https://twitter.com/daveaglick/status/950883853715025920?ref_src=twsrc%5Etfw"&gt;January 10, 2018&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async="" src="https://platform.twitter.com/widgets.js" charset="utf-8"&gt;&lt;/script&gt;
+&lt;p&gt;I built this site for a few reasons, some community focused and others related to my own interests like static sites:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Make it easier to learn about .NET stuff you may not have known about.&lt;/li&gt;
+&lt;li&gt;Collect a comprehensive database of information on all things .NET.&lt;/li&gt;
+&lt;li&gt;Demonstrate to myself and others what can be accomplished with data-centric static sites.&lt;/li&gt;
+&lt;li&gt;Provide an example of how &lt;a href="https://wyam.io/"&gt;Wyam&lt;/a&gt; can be used to power highly customized static sites.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;I’ll talk more about the technical nature of the site and those last two goals in a follow-up post, but for now I’d like to focus on the community aspects of the site. If you’d like skip the details on different areas of the site but want to know how to help, &lt;a href="https://daveaglick.com/%23call-to-action"&gt;skip ahead to the call to action&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;And a quick note: please don't take missing projects, blogs, events, etc. as even remotely personal. I've been slowly adding items for months and at some point I realized I would have to just ship the thing or it would never get out the door. I'll continue to add items, but now I also &lt;a href="https://discoverdot.net/suggest/"&gt;need your help&lt;/a&gt; to make sure we catalog everything out there.&lt;/p&gt;
+&lt;h1 id="daily-discovery"&gt;Daily Discovery&lt;/h1&gt;
+&lt;p&gt;This is where the idea for Discover .NET started and it grew from there (scope creep is a Real Thing That Happens). The daily discovery is a curated link to a project, blog, or other resource that you may not have seen. While some of the discoveries will be well known within the community, an emphasis will be placed on lesser-known resources. If you want to stay updated on discoveries, a feed is available.&lt;/p&gt;
+&lt;h1 id="projects-and-issues"&gt;Projects and Issues&lt;/h1&gt;
+&lt;p&gt;It became clear that gathering and presenting project information for the daily discovery could be extended to a sort of database across all .NET projects. One of the neat things about the site is that it integrates with GitHub and NuGet so that minimal information needs to be provided about a project to properly index it.&lt;/p&gt;
+&lt;p&gt;To make the project database more useful, a variety of sorts and filters were added including distinguishing between &lt;a href="https://discoverdot.net/projects/?filter-microsoft"&gt;Microsoft-sponsored projects&lt;/a&gt;, &lt;a href="https://discoverdot.net/projects/?filter-netplatform"&gt;.NET platform projects&lt;/a&gt; (projects that are considered “part of the platform”), and &lt;a href="https://discoverdot.net/projects/?filter-netfoundation"&gt;projects in the .NET Foundation&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;One of the more novel things about the site is how it deals with project issues. &lt;em&gt;Every&lt;/em&gt; open issue from every project is aggregated and presented on the site. Since Discover .NET is first and foremost designed to enhance community discoverability and participation, one of the goals of aggregating all the issues is to emphasize &lt;a href="https://discoverdot.net/issues/?tab=helpwanted"&gt;help wanted issues&lt;/a&gt; and &lt;a href="https://discoverdot.net/issues"&gt;recent issues&lt;/a&gt;. &lt;a href="https://github.com/up-for-grabs/up-for-grabs.net/issues/323"&gt;I’ve had an interest in doing something like this for years&lt;/a&gt; and am particularly proud of how well it turned out.&lt;/p&gt;
+&lt;h1 id="blogs-and-posts"&gt;Blogs and Posts&lt;/h1&gt;
+&lt;p&gt;So much good information is communicated through blogs, but there are only a handful of ways to become exposed to blogs you may not otherwise have known to visit or keep up with. Curated post lists like &lt;a href="https://www.alvinashcraft.com/"&gt;Dew Drop&lt;/a&gt; and &lt;a href="http://blog.cwa.me.uk/"&gt;The Morning Brew&lt;/a&gt; are a great way to keep up, as are platforms like &lt;a href="https://www.reddit.com/r/csharp/"&gt;Reddit&lt;/a&gt;. However, all of these aim to distill blog posts to the most relevant and as far as I know there’s no good comprehensive collection of blogs and posts across the .NET community.&lt;/p&gt;
+&lt;p&gt;Discover .NET collects &lt;em&gt;every&lt;/em&gt; &lt;a href="https://discoverdot.net/blogs"&gt;blog and all their posts&lt;/a&gt;. This information is made available as &lt;a href="https://discoverdot.net/#recent-news"&gt;a list of recent posts from all blogs&lt;/a&gt;, &lt;a href="https://discoverdot.net/feeds"&gt;feeds you can subscribe to&lt;/a&gt;, and &lt;a href="https://discoverdot.net/search"&gt;searching capabilities&lt;/a&gt;.&lt;/p&gt;
+&lt;h1 id="broadcasts-and-episodes"&gt;Broadcasts and Episodes&lt;/h1&gt;
+&lt;p&gt;Podcasts and other types of broadcasts like YouTube tutorials and live coding screencasts are becoming more popular. In addition to blogs, Discover .NET also collects &lt;a href="https://discoverdot.net/broadcasts"&gt;broadcasts and their episodes&lt;/a&gt;.&lt;/p&gt;
+&lt;h1 id="recent-news"&gt;Recent News&lt;/h1&gt;
+&lt;p&gt;To help keep you up to date on everything going on in .NET, recent posts and episodes from all blogs and broadcasts are presented on the homepage as well as available &lt;a href="https://discoverdot.net/feeds"&gt;via feed&lt;/a&gt;.&lt;/p&gt;
+&lt;h1 id="groups-and-events"&gt;Groups and Events&lt;/h1&gt;
+&lt;p&gt;All of this online community is great, but this wouldn’t be a comprehensive resource without also including the real-world parts of the community. The Meetup API is used to pull all .NET related groups (using the “.NET” topic) and then combines them with data on other non-Meetup-based groups for a full picture of everything going on. &lt;a href="https://discoverdot.net/groups"&gt;Groups are presented on a map and can be sorted and filtered by name or location&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Likewise, the next event from Meetup groups as well as conferences and other types of events &lt;a href="https://discoverdot.net/events"&gt;are presented in a similar way&lt;/a&gt;.&lt;/p&gt;
+&lt;h1 id="resources"&gt;Resources&lt;/h1&gt;
+&lt;p&gt;All of this data is great, but not everything valuable to the community fits into one of these clean categories. &lt;a href="https://discoverdot.net/resources"&gt;The resources section&lt;/a&gt; includes other links like commercial products, web sites, and anything else that the community might find valuable.&lt;/p&gt;
+&lt;h1 id="search"&gt;Search&lt;/h1&gt;
+&lt;p&gt;I’m particularly fond of the &lt;a href="https://discoverdot.net/search"&gt;search feature&lt;/a&gt; of the site. It lets you locate content across all the different data types. For example, &lt;a href="https://discoverdot.net/search?query=Blazor"&gt;searching for “Blazor”&lt;/a&gt; yields some interesting issues, blog posts, and podcasts. More on how this works in a following post.&lt;/p&gt;
+&lt;h1 id="feeds-and-api"&gt;Feeds and API&lt;/h1&gt;
+&lt;p&gt;One hope I have for the site is that it extends beyond your browser. I’d love for you to be able to get the information you need when and where you want it. To this end, &lt;a href="https://discoverdot.net/feeds"&gt;several RSS and Atom feeds&lt;/a&gt; are available. There’s also an &lt;a href="https://discoverdot.net/api"&gt;API&lt;/a&gt; and I’d love for the community to use it and build interesting tools using all this data.&lt;/p&gt;
+&lt;h1 id="looking-ahead"&gt;Looking Ahead&lt;/h1&gt;
+&lt;p&gt;This is an ongoing project and I have &lt;a href="https://github.com/daveaglick/discoverdotnet/issues"&gt;lots of ideas&lt;/a&gt; for future improvements. A couple items I’d like to add soon are &lt;a href="https://github.com/daveaglick/discoverdotnet/issues/15"&gt;support for multiple NuGet packages per-project&lt;/a&gt;, &lt;a href="https://github.com/daveaglick/discoverdotnet/issues/23"&gt;support for Chocolatey packages&lt;/a&gt;, and a &lt;a href="https://github.com/daveaglick/discoverdotnet/issues/28"&gt;Twitter bot&lt;/a&gt; that automatically posts content from the site. I’d love to hear what you think should be added, so &lt;a href="https://github.com/daveaglick/discoverdotnet/issues/new"&gt;file an issue&lt;/a&gt; if you’ve got any ideas.&lt;/p&gt;
+&lt;h1 id="call-to-action"&gt;Call To Action&lt;/h1&gt;
+&lt;p&gt;I need your help! This is a site for and hopefully by the community. Gathering the initial data was really hard. Even though it’s easy to add any particular resource to the site, collecting hundreds of items took a lot of time. Now that the site is live, I’m hoping the community can help scale data collection. &lt;a href="https://discoverdot.net/suggest/"&gt;Go here for instructions on how to suggest new content&lt;/a&gt;. If you’re interested in taking an even more active roll, &lt;a href="https://twitter.com/daveaglick"&gt;drop me a line&lt;/a&gt;.&lt;/p&gt;
+</content>
+		<summary>The personal blog of Dave Glick</summary>
+	</entry>
+	<entry>
+		<id>https://daveaglick.com/posts/blazor-razor-webassembly-and-mono</id>
+		<title>Blazor, Razor, WebAssembly, and Mono</title>
+		<link href="https://daveaglick.com/posts/blazor-razor-webassembly-and-mono" />
+		<link rel="enclosure" type="image" href="https://daveaglick.com/images/puzzle.jpg" />
+		<updated>2018-04-24T00:00:00Z</updated>
+		<content>&lt;p&gt;&lt;a href="https://github.com/aspnet/Blazor"&gt;Blazor&lt;/a&gt; is an exciting new web framework from the ASP.NET team that uses &lt;a href="https://github.com/aspnet/Razor"&gt;Razor&lt;/a&gt;, &lt;a href="http://webassembly.org/"&gt;WebAssembly&lt;/a&gt;, and Mono to enable the use of .NET on the client. There’s been a lot of excitement about the possibilities this presents, but there’s also been just as much confusion about how these various parts fit together. In this post I’ll attempt to clarify things and show you exactly what each of these technologies do and how they work together to enable .NET in your browser.&lt;/p&gt;
+&lt;h1 id="how-javascript-works"&gt;How JavaScript Works&lt;/h1&gt;
+&lt;p&gt;Before we start examining some of the more recent pieces of this puzzle, it’ll help to take a step back and look at what happens inside your browser when it loads and evaluates JavaScript code:&lt;/p&gt;
+&lt;img src="/posts/images/js.png" class="img-responsive" style="margin-top: 6px; margin-bottom: 6px;"&gt;
+&lt;p&gt;Inside every browser is a &lt;em&gt;JavaScript runtime&lt;/em&gt; (or &lt;em&gt;engine&lt;/em&gt;) that's responsible for turning your JavaScript into something that can be evaluated. It's often referred to as a &lt;em&gt;virtual machine&lt;/em&gt; since it presents a well-defined boundary in which the code is evaluated and isolates that evaluation to a specific sandboxed environment. This diagram is a gross oversimplification of modern JavaScript engines, but they all generally consist of three stages:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Parser&lt;/strong&gt; - Performs &lt;a href="https://en.wikipedia.org/wiki/Lexical_analysis"&gt;lexical analysis &lt;/a&gt; on the JavaScript code and converts it into tokens (small strings with specific meaning). The tokens are then reassembled into a syntax tree that gets used in the next step.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Compiler&lt;/strong&gt; - Transforms the syntax tree into bytecode, which is a low-level representation of the code that the interpreter can quickly understand and evaluate.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;JIT&lt;/strong&gt; - A just-in-time interpreter that takes the bytecode and evaluates it on the fly at runtime, thus executing your code.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;I'm sure I've misrepresented or totally missed certain subtleties of this process, so if you see anything glaringly wrong please sound off in the comments. The important point here is that the JavaScript engine that exists in every browser takes your JavaScript code, figures out what it means, and then evaluates it inside the browser.&lt;/p&gt;
+&lt;h1 id="how-webassembly-works"&gt;How WebAssembly Works&lt;/h1&gt;
+&lt;p&gt;WebAssembly is described by the official site as:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&amp;quot;WebAssembly (abbreviated Wasm) is a binary instruction format for a stack-based virtual machine”&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;That’s not particularly helpful since it’s intentionally abstract to allow for future implementation changes. What’s important for our purposes is to understand how WebAssembly interacts with the existing JavaScript support that’s already in your browser. Here’s that chart again with the addition of WebAssembly bits:&lt;/p&gt;
+&lt;img src="/posts/images/webassembly.png" class="img-responsive" style="margin-top: 6px; margin-bottom: 6px;"&gt;
+&lt;p&gt;The thing to notice here is that the WebAssembly code is fed directly into the JIT compiler of the JavaScript runtime. That's because &lt;a href="http://webassembly.org/docs/modules/"&gt;WebAssembly modules&lt;/a&gt; have already been compiled into a form of JavaScript bytecode that modern WebAssembly-supporting JavaScript engines can evaluate in their JIT component. The takeaway here is that WebAssembly is &lt;em&gt;related&lt;/em&gt; to JavaScript as it pertains to runtime evaluation, but isn't itself JavaScript. This is a common misconception. WebAssembly is not a transpiler like TypeScript, CoffeeScript, etc.&lt;/p&gt;
+&lt;h1 id="mono"&gt;Mono&lt;/h1&gt;
+&lt;p&gt;Recall that I mentioned Mono at the beginning of this post. It’s arguably the most important part of the .NET-in-the-browser story but it’s probably also the least understood.&lt;/p&gt;
+&lt;p&gt;In order to evaluate .NET assemblies in a web browser, we need something that's been compiled for WebAssembly that knows what to do with .NET assemblies and IL. In other words, we need a .NET runtime that's been compiled to WebAssembly. When Blazor was first starting out, Steve Sanderson found that he could compile a small, portable, open source .NET runtime called &lt;a href="https://github.com/chrisdunelm/DotNetAnywhere"&gt;DotNetAnywhere&lt;/a&gt; to WebAssembly without too much trouble:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Blazor runs .NET code in the browser via a small, portable .NET runtime called DotNetAnywhere (DNA) compiled to WebAssembly&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Unfortunately &lt;a href="http://blog.stevensanderson.com/2017/11/05/blazor-on-mono/"&gt;that didn't scale very well&lt;/a&gt;. Thankfully for us, Microsoft already owns an open source, cross-platform, highly-portable .NET runtime. No, not .NET Core. I'm talking about the &lt;em&gt;other&lt;/em&gt; open source cross-platform .NET runtime: Mono. Even better, &lt;a href="http://www.mono-project.com/news/2017/08/09/hello-webassembly/"&gt;the Mono team had recently accounced&lt;/a&gt; they were working on getting Mono to compile to WebAssembly.&lt;/p&gt;
+&lt;p&gt;While the Mono team continues to address bugs and corner cases, the runtime already works very well on WebAssembly. One important point is that this still has nothing to do with Blazor (other than maybe some incentive). The Mono WebAssembly runtime is totally independent of Blazor and can be used by anyone to evaluate .NET assemblies in the browser. In fact, other projects like &lt;a href="https://github.com/praeclarum/Ooui"&gt;Ooui&lt;/a&gt; have already started to leverage it.&lt;/p&gt;
+&lt;p&gt;It's also important to note that this is a full .NET runtime that evaluates .NET assemblies. Unlike the WebAssembly support that compiled languages like C++ and Rust are exploring where the application itself is compiled to WebAssembly, the Mono bits are the only thing that needs to be compiled to WebAssembly. Your own .NET assembly will &amp;quot;just work&amp;quot; when it's loaded and interpreted by the Mono runtime. All that said, the Mono team is also exploring a precompilation scenario for enhanced performance. In that mode, you would essentially compile your .NET code along with the Mono runtime directly into WebAssembly bytecode.&lt;/p&gt;
+&lt;h1 id="blazor"&gt;Blazor&lt;/h1&gt;
+&lt;p&gt;All of this sets up the exciting work going on in Blazor itself. Blazor is the name of a project that includes both a runtime component and various tooling. The tooling helps produce the assemblies that the runtime bits know how to work with. What gets delivered to your browser looks like this:&lt;/p&gt;
+&lt;img src="/posts/images/blazor.png" class="img-responsive" style="margin-top: 6px; margin-bottom: 6px;"&gt;
+&lt;p&gt;There's a lot going on here so let's examine each part:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Blazor Page&lt;/strong&gt; - The HTML file that Blazor produces is really simple. It basically just includes CSS files and headers as well as a couple JavaScript files to help bootstrap the WebAssembly support (WebAssembly modules currently have to be loaded by JavaScript).&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;blazor.js/mono.js&lt;/strong&gt; - These JavaScript files are responsible for loading the Mono WebAssembly module and then giving it your Blazor application assembly. They also contain support for features like JavaScript interop.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;mono.wasm&lt;/strong&gt; - This is the actual Mono WebAssembly .NET runtime that &lt;code&gt;mono.js&lt;/code&gt; loads into the browser. It is basically Mono compiled to WebAssembly.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;mscorlib.dll, etc.&lt;/strong&gt; - The core .NET assemblies. These need to be loaded just like any other .NET runtime otherwise you'll be missing key parts of the .NET &lt;code&gt;System&lt;/code&gt; namespace(s).&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;myapp.dll&lt;/strong&gt; - Your Blazor application which was processed by the Razor engine and then compiled by the Blazor tooling. Today the tooling exists as MSBuild tasks that get added to your project by the Blazor NuGet package.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The end result is Razor and C# in your browser! To learn more about Blazor from a developer perspective, check out &lt;a href="https://learn-blazor.com/"&gt;https://learn-blazor.com/&lt;/a&gt;.&lt;/p&gt;
+</content>
+		<summary>The personal blog of Dave Glick</summary>
+	</entry>
+</feed>

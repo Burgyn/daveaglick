@@ -1,4 +1,113 @@
-﻿<p>Unless you've been hiding under a rock, you've heard about <a href="http://www.theregister.co.uk/2016/03/23/npm_left_pad_chaos/">the controversy over left-pad</a> in which a Node developer, angry over a trademark dispute, pulled all of his packages from NPM. It turns out that one of these packages, <a href="https://github.com/azer/left-pad">left-pad</a>, was actually a dependency for a bunch of <em>other</em> packages and so builds everywhere came grinding to a halt. Now <a href="http://www.haneycodes.net/npm-left-pad-have-we-forgotten-how-to-program/">everyone</a> <a href="https://developers.slashdot.org/story/16/03/23/0652204/how-one-dev-broke-node-and-thousands-of-projects-in-11-lines-of-javascript">has</a> <a href="https://medium.com/&#64;mproberts/a-discussion-about-the-breaking-of-the-internet-3d4d2a83aa4d#.fqb2motdz">an</a> <a href="https://medium.com/&#64;robbyrussell/d-oh-my-zsh-af99ca54212c#.3lzvqpv3f">opinion</a> on the topic, many of which are very thought-provoking. I figure what the heck, since everyone else is writing about it I might as well too.</p>
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="The personal blog of Dave Glick">
+
+  <title>Dave Glick - Some Thoughts on Microdependencies, NPM, and Node</title>
+
+      <link type="application/rss+xml" rel="alternate" href="/feed.rss" />
+      <link type="application/atom+xml" rel="alternate" href="/feed.atom" />
+  
+  <meta name="application-name" content="Dave Glick" />
+  <meta name="msapplication-tooltip" content="Dave Glick" />
+  <meta name="msapplication-starturl" content="/" />
+
+  <meta property="og:title" content="Dave Glick - Some Thoughts on Microdependencies, NPM, and Node" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://daveaglick.com/posts/some-thoughts-on-microdependencies-npm-and-node" />
+  
+  <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+  <!-- Bootstrap core CSS -->
+  <link href="/vendor/bootstrap/scss/bootstrap.css" rel="stylesheet">
+
+  <!-- Custom fonts for this template -->
+  <link href="/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+  <link href="/vendor/fontawesome-free/css/brands.min.css" rel="stylesheet" type="text/css">
+  <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css' data-no-mirror>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css' data-no-mirror>
+  
+  <!-- Custom styles for this template -->
+  <link href="/scss/clean-blog.css" rel="stylesheet">
+  
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.19.0/components/prism-core.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.19.0/plugins/autoloader/prism-autoloader.min.js" data-no-mirror></script>
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.0.0/dist/quicklink.umd.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.19.0/themes/prism.css">
+  
+  
+
+
+  
+
+</head>
+
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
+  <div class="container">
+    <a class="navbar-brand" href="/">Dave Glick</a>
+    <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+      Menu
+      <i class="fas fa-bars"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarResponsive">
+      <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="/speaking">Talks</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/projects">Projects</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/about">About</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/tags">Tags</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/posts">Posts</a>
+            </li>
+</ul>
+    </div>
+  </div>
+</nav>
+
+  <!-- Page Header -->
+  <header class="masthead">
+  <div class="overlay"></div>
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="post-heading">
+          <h1>
+            Some Thoughts on Microdependencies, NPM, and Node
+          </h1>
+            <h2 class="subheading">What can we learn from left-pad gate?</h2>
+              <div class="meta">Published on Thursday, March 24, 2016</div>
+                <div class="mt-3">
+                      <a href="/tags/open-source" class="badge badge-light"> open source</a>
+                      <a href="/tags/npm" class="badge badge-light"> npm</a>
+                      <a href="/tags/node" class="badge badge-light"> node</a>
+                      <a href="/tags/microdependencies" class="badge badge-light"> microdependencies</a>
+                </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+  <!-- Main Content -->
+  <div class="container"> 
+    <div class="row">
+      <div id="content" class="col-md-12">  
+        <p>Unless you've been hiding under a rock, you've heard about <a href="http://www.theregister.co.uk/2016/03/23/npm_left_pad_chaos/">the controversy over left-pad</a> in which a Node developer, angry over a trademark dispute, pulled all of his packages from NPM. It turns out that one of these packages, <a href="https://github.com/azer/left-pad">left-pad</a>, was actually a dependency for a bunch of <em>other</em> packages and so builds everywhere came grinding to a halt. Now <a href="http://www.haneycodes.net/npm-left-pad-have-we-forgotten-how-to-program/">everyone</a> <a href="https://developers.slashdot.org/story/16/03/23/0652204/how-one-dev-broke-node-and-thousands-of-projects-in-11-lines-of-javascript">has</a> <a href="https://medium.com/&#64;mproberts/a-discussion-about-the-breaking-of-the-internet-3d4d2a83aa4d#.fqb2motdz">an</a> <a href="https://medium.com/&#64;robbyrussell/d-oh-my-zsh-af99ca54212c#.3lzvqpv3f">opinion</a> on the topic, many of which are very thought-provoking. I figure what the heck, since everyone else is writing about it I might as well too.</p>
 <p>Since the story first broke Tuesday evening, I've been wondering about the bigger implications and what it means for some of the concepts and technologies involved. While this specific situation was obviously concerning for everyone who suffered a broken build, I think the broader implication is that it's left us wondering about the house of cards that's been built underneath many of the open source projects we've come to depend on. In this case, left-pad was deemed <em>too big to fail</em>, it was <a href="http://blog.npmjs.org/post/141577284765/kik-left-pad-and-npm">quickly re-implemented by a different author</a>, and <a href="https://twitter.com/seldo/status/712414400808755200">un-un-published</a>. Life (and the builds) went on. But what about the next time? Or what if the package only breaks a handful of builds? Are these <em>mircodependencies</em> to blame? Is NPM?</p>
 <h1 id="microdependencies">Microdependencies</h1>
 <p>Node has an interesting open source community. It's extremely active and as of this writing there are 258,326 packages on NPM (compare that to 52,318 on NuGet). Many of these packages are what you might call microdependencies. That is, they are relatively small and serve a very specific function.</p>
@@ -16,3 +125,108 @@
 <h1 id="final-thoughts">Final Thoughts</h1>
 <p>So where am I going with all this? I don't really know. I don't have a conclusion. <strong>What I do know is that I don't want to quickly dismiss the situation Node developers find themselves in, or assume that it's poorly concieved just because it's different than the model I'm used to.</strong></p>
 <p>There are some broad lessons here for developers on any stack too. <strong>Taking dependencies has risks</strong>, whether than dependency is one line or one thousand. <strong>If you don't control your code then someone else does</strong>, and their choices may not be the ones you would make. On the other hand, it's almost impossible to do everything yourself given the complexity of modern languages and systems. I guess the overall message is to <strong>be aware of the risks you're taking via the things that you use and work to mitigate those risks</strong>. At the end of the day, that's not about Node, or dependencies, or even software - it's about good engineering, or maybe even just life.</p>
+
+
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'somedave'; // required: replace example with your forum shortname
+    var disqus_identifier = 'some-thoughts-on-microdependencies-npm-and-node';
+    var disqus_title = 'Some Thoughts on Microdependencies, NPM, and Node';
+    var disqus_url = 'https://daveaglick.com/posts/some-thoughts-on-microdependencies-npm-and-node';
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+    
+    (function () {
+        var s = document.createElement('script'); s.async = true;
+        s.type = 'text/javascript';
+        s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+        (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- Footer -->  
+  <footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 text-center">
+                <ul class="list-inline text-center">
+                    <li class="list-inline-item">
+                        <a href="https://twitter.com/daveaglick">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    <li class="list-inline-item">
+                        <a href="https://github.com/daveaglick">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                </ul>
+                <div>
+                    <p class="copyright text-muted">
+                        Copyright © 2020 by Dave Glick. All jams and jellies preserved. The opinions expressed herein are my own and do not represent those of my employer or any other third-party views in any way. This work is licensed under a <a href="http://creativecommons.org/licenses/by/4.0/" rel="license">Creative Commons Attribution 4.0 International License</a>.
+                    </p>
+                </div>
+                <ul class="list-inline text-center small">                                
+                        <li class="list-inline-item">
+                        <a href="/feed.rss"><i class="fa fa-rss"></i> RSS Feed</a>
+                        </li>
+                        <li class="list-inline-item">
+                        <a href="/feed.atom"><i class="fa fa-rss"></i> Atom Feed</a>
+                        </li>
+                </ul>
+                <div class="font-weight-bold small">
+                    <a href="https://github.com/daveaglick/daveaglick"><i class="fab fa-github"></i> This Site on GitHub</a>
+                </div>
+                <div class="font-weight-bold small">
+                    <a href="https://statiq.dev">Generated by Statiq</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+  <!-- Bootstrap core JavaScript -->
+  <script src="/vendor/jquery/jquery.min.js"></script>
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+  <script type="text/javascript">
+    // Google Analytics
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r; i[r] = i[r] || function () {
+        (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date(); a = s.createElement(o),
+        m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = g; m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+
+    ga('create', 'UA-54470483-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+  
+
+  <!-- Custom scripts for this template -->
+  <script src="/js/clean-blog.js"></script>
+
+</body>
+
+</html>

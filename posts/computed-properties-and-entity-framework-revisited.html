@@ -1,4 +1,113 @@
-﻿<p>Since publishing <a href="/posts/computed-properties-and-entity-framework">my first post on the topic</a> over a year ago, I've continued to look for easy ways to tackle this problem. In the last post, I ended up recommending the excellent <a href="https://github.com/hazzik/DelegateDecompiler">DelegateDecompiler</a> library to help convert plain unmapped properties to expression trees that LINQ to Entities can use. I still like this approach, but I've also been searching for a way to make this process a little more transparent and use a little less magic.</p>
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="The personal blog of Dave Glick">
+
+  <title>Dave Glick - Computed Properties and Entity Framework (Revisited)</title>
+
+      <link type="application/rss+xml" rel="alternate" href="/feed.rss" />
+      <link type="application/atom+xml" rel="alternate" href="/feed.atom" />
+  
+  <meta name="application-name" content="Dave Glick" />
+  <meta name="msapplication-tooltip" content="Dave Glick" />
+  <meta name="msapplication-starturl" content="/" />
+
+  <meta property="og:title" content="Dave Glick - Computed Properties and Entity Framework (Revisited)" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://daveaglick.com/posts/computed-properties-and-entity-framework-revisited" />
+  
+  <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+  <!-- Bootstrap core CSS -->
+  <link href="/vendor/bootstrap/scss/bootstrap.css" rel="stylesheet">
+
+  <!-- Custom fonts for this template -->
+  <link href="/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+  <link href="/vendor/fontawesome-free/css/brands.min.css" rel="stylesheet" type="text/css">
+  <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css' data-no-mirror>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css' data-no-mirror>
+  
+  <!-- Custom styles for this template -->
+  <link href="/scss/clean-blog.css" rel="stylesheet">
+  
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.19.0/components/prism-core.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.19.0/plugins/autoloader/prism-autoloader.min.js" data-no-mirror></script>
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.0.0/dist/quicklink.umd.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.19.0/themes/prism.css">
+  
+  
+
+
+  
+
+</head>
+
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
+  <div class="container">
+    <a class="navbar-brand" href="/">Dave Glick</a>
+    <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+      Menu
+      <i class="fas fa-bars"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarResponsive">
+      <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="/speaking">Talks</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/projects">Projects</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/about">About</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/tags">Tags</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/posts">Posts</a>
+            </li>
+</ul>
+    </div>
+  </div>
+</nav>
+
+  <!-- Page Header -->
+  <header class="masthead">
+  <div class="overlay"></div>
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="post-heading">
+          <h1>
+            Computed Properties and Entity Framework (Revisited)
+          </h1>
+            <h2 class="subheading">Another way to use your computed properties in predicates and projections.</h2>
+              <div class="meta">Published on Friday, February 5, 2016</div>
+                <div class="mt-3">
+                      <a href="/tags/entity-framework" class="badge badge-light"> Entity Framework</a>
+                      <a href="/tags/linq" class="badge badge-light"> LINQ</a>
+                      <a href="/tags/database" class="badge badge-light"> database</a>
+                      <a href="/tags/linq-to-entities" class="badge badge-light"> LINQ to Entities</a>
+                </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+  <!-- Main Content -->
+  <div class="container"> 
+    <div class="row">
+      <div id="content" class="col-md-12">  
+        <p>Since publishing <a href="/posts/computed-properties-and-entity-framework">my first post on the topic</a> over a year ago, I've continued to look for easy ways to tackle this problem. In the last post, I ended up recommending the excellent <a href="https://github.com/hazzik/DelegateDecompiler">DelegateDecompiler</a> library to help convert plain unmapped properties to expression trees that LINQ to Entities can use. I still like this approach, but I've also been searching for a way to make this process a little more transparent and use a little less magic.</p>
 <p>First, a little detour. I know Entity Framework specifically, and other &quot;heavy&quot; ORMs in general, have a bad reputation from some developers. That's fine, everyone should use what makes them the most productive. However, this position does bother me a bit because I think it's partly unfair. Entity Framework and other ORMs are tools. Like any complex tool they can be used without much depth or you can learn how they really work and use them well. An analogy might be a racing bike. I'm not a biker (bicyclist?) and probably wouldn't even know how to properly pedal one, let alone change gears or swap the chain. But I can hop on and probably get from one place to another. However, I might complain that the bike is slow, hard to push up hills, makes my muscles hurt, and is generally less productive than just walking. I see a lot of complains of Entity Framework that seem focused on the fact that it's slow, generates queries that are too big, uses too much memory, etc. In many cases (though not all), these complaints can be mitigated by a better understanding of the tool. For example, you may need to eagerly load navigation properties or delay materialization. I've personally found that I can generally write Entity Framework queries that generate SQL similar to what I would have hand generated. And let's not forget that it's also <em>really easy</em> to write bad SQL too. Anyway, rant over.</p>
 <p>Getting back to the topic at hand, I've attempted to find a way to avoid all the expression tree magic and dynamic compilation involved in a lot of the more advances approaches I discussed in my previous post. It's not that there's anything wrong with them, they all work quite well actually, it's just that I tend to strive for the simplest most direct way to do something because I find it's much more maintainable in the long run.</p>
 <p>I had three requirements:</p>
@@ -150,3 +259,108 @@ var result3 = context.Cars
 }
 </code></pre>
 <p>Tada! If you've made it this far, you've probably had a similar problem and were hopefully able to figure out what was going on. I'm interested if anyone has feedback or improvements - this technique has been working pretty well for me, but I'm always open to suggestions.</p>
+
+
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'somedave'; // required: replace example with your forum shortname
+    var disqus_identifier = 'computed-properties-and-entity-framework-revisited';
+    var disqus_title = 'Computed Properties and Entity Framework (Revisited)';
+    var disqus_url = 'https://daveaglick.com/posts/computed-properties-and-entity-framework-revisited';
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+    
+    (function () {
+        var s = document.createElement('script'); s.async = true;
+        s.type = 'text/javascript';
+        s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+        (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- Footer -->  
+  <footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 text-center">
+                <ul class="list-inline text-center">
+                    <li class="list-inline-item">
+                        <a href="https://twitter.com/daveaglick">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    <li class="list-inline-item">
+                        <a href="https://github.com/daveaglick">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                </ul>
+                <div>
+                    <p class="copyright text-muted">
+                        Copyright © 2020 by Dave Glick. All jams and jellies preserved. The opinions expressed herein are my own and do not represent those of my employer or any other third-party views in any way. This work is licensed under a <a href="http://creativecommons.org/licenses/by/4.0/" rel="license">Creative Commons Attribution 4.0 International License</a>.
+                    </p>
+                </div>
+                <ul class="list-inline text-center small">                                
+                        <li class="list-inline-item">
+                        <a href="/feed.rss"><i class="fa fa-rss"></i> RSS Feed</a>
+                        </li>
+                        <li class="list-inline-item">
+                        <a href="/feed.atom"><i class="fa fa-rss"></i> Atom Feed</a>
+                        </li>
+                </ul>
+                <div class="font-weight-bold small">
+                    <a href="https://github.com/daveaglick/daveaglick"><i class="fab fa-github"></i> This Site on GitHub</a>
+                </div>
+                <div class="font-weight-bold small">
+                    <a href="https://statiq.dev">Generated by Statiq</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+  <!-- Bootstrap core JavaScript -->
+  <script src="/vendor/jquery/jquery.min.js"></script>
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+  <script type="text/javascript">
+    // Google Analytics
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r; i[r] = i[r] || function () {
+        (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date(); a = s.createElement(o),
+        m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = g; m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+
+    ga('create', 'UA-54470483-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+  
+
+  <!-- Custom scripts for this template -->
+  <script src="/js/clean-blog.js"></script>
+
+</body>
+
+</html>

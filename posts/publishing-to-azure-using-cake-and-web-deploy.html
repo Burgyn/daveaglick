@@ -1,0 +1,263 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="The personal blog of Dave Glick">
+
+  <title>Dave Glick - Publishing To Azure Using Cake And Web Deploy</title>
+
+      <link type="application/rss+xml" rel="alternate" href="/feed.rss" />
+      <link type="application/atom+xml" rel="alternate" href="/feed.atom" />
+  
+  <meta name="application-name" />
+  <meta name="msapplication-tooltip" />
+  <meta name="msapplication-starturl" content="/" />
+
+  <meta property="og:title" content="Dave Glick - Publishing To Azure Using Cake And Web Deploy" />
+    <meta property="og:image" content="/images/nightcars.jpg" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://daveaglick.com/posts/publishing-to-azure-using-cake-and-web-deploy" />
+  
+  <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+  <!-- Bootstrap core CSS -->
+  <link href="/vendor/bootstrap/scss/bootstrap.css" rel="stylesheet">
+
+  <!-- Custom fonts for this template -->
+  <link href="/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+  <link href="/vendor/fontawesome-free/css/brands.min.css" rel="stylesheet" type="text/css">
+  <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css' data-no-mirror>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css' data-no-mirror>
+  
+  <!-- Custom styles for this template -->
+  <link href="/scss/clean-blog.css" rel="stylesheet">
+  
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.19.0/components/prism-core.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.19.0/plugins/autoloader/prism-autoloader.min.js" data-no-mirror></script>
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.0.0/dist/quicklink.umd.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.19.0/themes/prism.css">
+  
+  
+
+
+  
+
+</head>
+
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
+  <div class="container">
+    <a class="navbar-brand" href="/">Dave Glick</a>
+    <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+      Menu
+      <i class="fas fa-bars"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarResponsive">
+      <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="/tags">Tags</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/archive">Archive</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/speaking">Talks</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/projects">Projects</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/about">About</a>
+            </li>
+</ul>
+    </div>
+  </div>
+</nav>
+
+  <!-- Page Header -->
+  <header class="masthead" style="background-image: url(&quot;/images/nightcars.jpg&quot;)">
+  <div class="overlay"></div>
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="post-heading">
+          <h1>
+            Publishing To Azure Using Cake And Web Deploy
+          </h1>
+            <h2 class="subheading">Scripted deployment synchronization for static sites</h2>
+              <div class="meta">Published on Tuesday, April 4, 2017</div>
+                <div class="mt-3">
+                      <a href="/tags/azure" class="badge badge-light"> Azure</a>
+                      <a href="/tags/cake" class="badge badge-light"> Cake</a>
+                      <a href="/tags/devops" class="badge badge-light"> devops</a>
+                </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+  <!-- Main Content -->
+  <div class="container"> 
+    <div class="row">
+      <div id="content" class="col-md-12">  
+        <p>As you may know, I am a <a href="https://wyam.io">big fan of static sites</a> and am always interested in new ways to manage and deploy them. I previously blogged about <a href="/posts/synchronizing-files-with-azure-web-apps-over-ftp">using FTP to synchronize files with Azure</a> and this post explores an alternate way to do something similar using Web Deploy.</p>
+<p>When you publish a web application from inside Visual Studio, you're often using a technology called <a href="https://www.iis.net/learn/publish/using-web-deploy">Web Deploy</a> under the hood. Web Deploy is both a server and a client technology, meaning the server must also support it. It's typically supported on IIS, which means the Azure App Service and Web Apps also supports it. While these instructions could be easily applied to deploying a static site to any IIS server with Web Deploy support, I'm going to focus on Azure from here on out.</p>
+<p>To use Web Deploy you'll need a couple bits of information including your publish endpoint (usually a URL), your username, and your password. This information is automatically downloaded into Visual Studio when you configure a publish profile, but we want to access it directly. To find it, click the &quot;Get publish profile&quot; link at the top of the Overview page for your Azure Web App:</p>
+<img src="/posts/images/get-publish-profile.png" alt="Get publish profile" class="img-responsive" style="margin-top: 6px; margin-bottom: 6px;">
+<p>This will download an XML file with the information you need (even though it's named <code>[sitename].PublishSettings</code>). The file will look something like this:</p>
+<pre><code class="language-xml">&lt;publishData&gt;
+  &lt;publishProfile
+    profileName=&quot;sitename - Web Deploy&quot;
+    publishMethod=&quot;MSDeploy&quot;
+    publishUrl=&quot;sitename.scm.azurewebsites.net:443&quot;
+    msdeploySite=&quot;sitename&quot;
+    userName=&quot;$sitename&quot;
+    userPWD=&quot;abc123somereallylongstringhere&quot;
+    destinationAppUrl=&quot;http://sitename.azurewebsites.net&quot;
+    SQLServerDBConnectionString=&quot;&quot;
+    mySQLDBConnectionString=&quot;&quot;
+    hostingProviderForumLink=&quot;&quot;
+    controlPanelLink=&quot;&quot;
+    webSystem=&quot;WebSites&quot;&gt;
+    &lt;databases /&gt;
+  &lt;/publishProfile&gt;
+&lt;/publishData&gt;
+</code></pre>
+<p>You can ignore most of that information. What we're primarily looking for is the value of <code>msdeploySite</code> (which should be the same as your site in Azure), <code>userName</code> (again, typically the same as your Azure site name with a <code>$</code> prefix), and <code>userPWD</code>.</p>
+<p>Once you have this information you have what you need to call the Web Deploy libraries. One way to work with Web Deploy is <a href="https://www.iis.net/learn/publish/using-web-deploy/powershell-scripts-for-automating-web-deploy-setup">via PowerShell</a> but I love <a href="http://cakebuild.net/">Cake</a> so that's what we're going to use here. Specifically, we're going to use a Cake addin called <a href="https://github.com/SharpeRAD/Cake.WebDeploy">Cake.WebDeploy</a> by Phillip Sharpe. It wraps the Web Deploy libraries and makes them easy to use from inside a Cake build script.</p>
+<p>Your Cake build script should look something like:</p>
+<pre><code>#addin &quot;nuget:https://api.nuget.org/v3/index.json?package=Cake.WebDeploy&quot;
+var siteName = &quot;my-azure-sitename&quot;;
+var deployPassword = EnvironmentVariable(&quot;DEPLOY_PASSWORD&quot;);
+
+// ...
+
+Task(&quot;Deploy&quot;)
+    .Does(() =&gt;
+    {
+        DeployWebsite(new DeploySettings()
+        {
+            SourcePath = &quot;./output&quot;,
+            SiteName = siteName,
+            ComputerName = &quot;https://&quot; + siteName + &quot;.scm.azurewebsites.net:443/msdeploy.axd?site=&quot; + siteName,
+            Username = &quot;$&quot; + siteName,
+            Password = deployPassword
+        });
+    });
+</code></pre>
+<p>Notice that <code>SourcePath</code> in the deploy settings is pointing to a folder. Whatever files exist under that folder will be synchronized with Azure. The really nice thing here is that Web Deploy knows how to compare files so it doesn't have to upload everything if only a few files changed. This is also great for static sites because you can just put whatever folder the output of your static generator uses and it'll get published.</p>
+<p>Another thing to make notice of is the <code>ComputerName</code>. I tried all sorts of things for this property and never could get the right URL. Thankfully, <a href="https://twitter.com/devlead">Mattias Karlsson</a> came to the rescue and gave me the magic URL to use.</p>
+<p>Finally, note that I'm storing the password I got from the publish settings file I downloaded as an environment variable. That keeps your credentials out of the build script, which you'll probably be checking into source control.</p>
+<p>And there you have it. Easy synchronization of a set of statically generated files to an Azure Web App.</p>
+
+
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'somedave'; // required: replace example with your forum shortname
+    var disqus_identifier = 'publishing-to-azure-using-cake-and-web-deploy';
+    var disqus_title = 'Publishing To Azure Using Cake And Web Deploy';
+    var disqus_url = 'https://daveaglick.com/posts/publishing-to-azure-using-cake-and-web-deploy';
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+    
+    (function () {
+        var s = document.createElement('script'); s.async = true;
+        s.type = 'text/javascript';
+        s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+        (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- Footer -->  
+  <footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 text-center">
+                <ul class="list-inline text-center">
+                    <li class="list-inline-item">
+                        <a href="https://twitter.com/daveaglick">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    <li class="list-inline-item">
+                        <a href="https://github.com/daveaglick">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                </ul>
+                <div>
+                    <p class="copyright text-muted">
+                        Copyright © 2020 by Dave Glick. All jams and jellies preserved. The opinions expressed herein are my own and do not represent those of my employer or any other third-party views in any way. This work is licensed under a <a href="http://creativecommons.org/licenses/by/4.0/" rel="license">Creative Commons Attribution 4.0 International License</a>.
+                    </p>
+                </div>
+                <ul class="list-inline text-center small">                                
+                        <li class="list-inline-item">
+                        <a href="/feed.rss"><i class="fa fa-rss"></i> RSS Feed</a>
+                        </li>
+                        <li class="list-inline-item">
+                        <a href="/feed.atom"><i class="fa fa-rss"></i> Atom Feed</a>
+                        </li>
+                </ul>
+                <div class="font-weight-bold small">
+                    <a href="https://github.com/daveaglick/daveaglick"><i class="fab fa-github"></i> This Site on GitHub</a>
+                </div>
+                <div class="font-weight-bold small">
+                    <a href="https://statiq.dev">Generated by Statiq</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+  
+  <script type="text/javascript">
+    // Google Analytics
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r; i[r] = i[r] || function () {
+        (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date(); a = s.createElement(o),
+        m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = g; m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+
+    ga('create', 'UA-54470483-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+  
+
+  <!-- Bootstrap core JavaScript -->
+  <script src="/vendor/jquery/jquery.min.js"></script>
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Custom scripts for this template -->
+  <script src="/js/clean-blog.js"></script>
+
+</body>
+
+</html>

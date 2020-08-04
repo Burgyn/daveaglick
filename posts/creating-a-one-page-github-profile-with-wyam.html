@@ -1,0 +1,387 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="The personal blog of Dave Glick">
+
+  <title>Dave Glick - Creating A One-Page GitHub Profile With Wyam</title>
+
+      <link type="application/rss+xml" rel="alternate" href="/feed.rss" />
+      <link type="application/atom+xml" rel="alternate" href="/feed.atom" />
+  
+  <meta name="application-name" />
+  <meta name="msapplication-tooltip" />
+  <meta name="msapplication-starturl" content="/" />
+
+  <meta property="og:title" content="Dave Glick - Creating A One-Page GitHub Profile With Wyam" />
+    <meta property="og:image" content="/images/monitors.jpg" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://daveaglick.com/posts/creating-a-one-page-github-profile-with-wyam" />
+  
+  <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+  <!-- Bootstrap core CSS -->
+  <link href="/vendor/bootstrap/scss/bootstrap.css" rel="stylesheet">
+
+  <!-- Custom fonts for this template -->
+  <link href="/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+  <link href="/vendor/fontawesome-free/css/brands.min.css" rel="stylesheet" type="text/css">
+  <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css' data-no-mirror>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css' data-no-mirror>
+  
+  <!-- Custom styles for this template -->
+  <link href="/scss/clean-blog.css" rel="stylesheet">
+  
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.19.0/components/prism-core.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.19.0/plugins/autoloader/prism-autoloader.min.js" data-no-mirror></script>
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.0.0/dist/quicklink.umd.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.19.0/themes/prism.css">
+  
+  
+
+
+  
+
+</head>
+
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
+  <div class="container">
+    <a class="navbar-brand" href="/">Dave Glick</a>
+    <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+      Menu
+      <i class="fas fa-bars"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarResponsive">
+      <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="/tags">Tags</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/archive">Archive</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/speaking">Talks</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/projects">Projects</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/about">About</a>
+            </li>
+</ul>
+    </div>
+  </div>
+</nav>
+
+  <!-- Page Header -->
+  <header class="masthead" style="background-image: url(&quot;/images/monitors.jpg&quot;)">
+  <div class="overlay"></div>
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="post-heading">
+          <h1>
+            Creating A One-Page GitHub Profile With Wyam
+          </h1>
+              <div class="meta">Published on Friday, October 13, 2017</div>
+                <div class="mt-3">
+                      <a href="/tags/wyam" class="badge badge-light"> Wyam</a>
+                </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+  <!-- Main Content -->
+  <div class="container"> 
+    <div class="row">
+      <div id="content" class="col-md-12">  
+        <p>It's been a little while since I've done a todo post for Wyam, so I figured it was about time. In this post I'll show you how to make a nice one-page GitHub profile site. We'll use the <a href="https://wyam.io/modules/github">GitHub module</a> to fetch data from GitHub about your account and then render it using a Razor view. The whole thing is about 50 lines of code between the Wyam config file and the minimum Razor template (not counting a pretty style, which we'll add at the end).</p>
+<h1 id="config-file">Config File</h1>
+<p>Given how powerful they are, most people these days are using <a href="https://wyam.io/recipes/">Wyam recipes</a> to create their sites. These are essentially pre-canned configurations for specific use cases like <a href="https://wyam.io/recipes/docs/">documentation</a> or <a href="https://wyam.io/recipes/blog/">blogs</a>. However, using a recipe certainly isn't required and may be overkill if you just want to create a simple static site.</p>
+<p>For this site we're going to get some data from GitHub using the <a href="https://wyam.io/modules/github">GitHub module</a>. This module is a thin wrapper around <a href="https://github.com/octokit/octokit.net">Octokit</a> so we have access to everything we would when using Octokit directly. The module just makes it easier to add Octokit data to a Wyam document.</p>
+<p>The start, we need to add the <a href="https://www.nuget.org/packages/Wyam.GitHub/">Wyam.GitHub package</a> and the <a href="https://www.nuget.org/packages/Wyam.Razor/">Wyam.Razor package</a> to the configuration file since those libraries contain the <a href="https://wyam.io/modules/github">GitHub module</a> and the <a href="https://wyam.io/modules/razor">Razor module</a> respectively. Create a file in an empty directory called <code>config.wyam</code> and add this to the top of it:</p>
+<pre><code class="language-csharp">#n Wyam.Razor
+#n Wyam.GitHub
+</code></pre>
+<p>Now we're going to add a <a href="https://wyam.io/docs/concepts/pipelines">pipeline</a> that reads a Razor template, fetches data from GitHub and adds it to the model for the Razor template, and renders the template to an HTML file. Behind the scenes, Wyam uses a concept called <a href="https://wyam.io/docs/concepts/documents">documents</a> to store content and metadata. What we're really doing here is creating a new document that contains our Razor template, adding metadata that stores our GitHub objects in the document, and then rendering the content of the document as a Razor template. The Razor module knows to take any metadata for the document that's being rendered and present it as if it were the model for the Razor page.</p>
+<pre><code class="language-csharp">// Let's store the username, change this to whatever you want
+string username = &quot;daveaglick&quot;;
+Pipelines.Add(
+    // Read the template
+    ReadFiles(&quot;index.cshtml&quot;),
+    // Add GitHub data to the template
+    GitHub()
+        .WithRequest(&quot;User&quot;, x =&gt; x.User.Get(username).Result)
+        .WithRequest(&quot;Repos&quot;, x =&gt; x.Repository.GetAllForUser(username).Result),
+    // Render the template
+    Razor(),
+    // Write it out
+    WriteFiles(&quot;.html&quot;)
+);
+</code></pre>
+<p>Note that in the <code>GitHub</code> module we're using the fluent method <code>WithRequest</code> to create requests to the GitHub API. The first argument of that method indicates the key of the metadata object we wish to store the result in. The second argument is a delegate that passes a Octokit <code>GitHubClient</code> instance and stores the return value in the metadata of the document. You can specify as many of these requests as you like. Also note that I'm using the pattern of storing the entire Octokit result object in the metadata (which will then be passed to the Razor page as it's model). An alternate pattern would be to store an intermediate object with only the data you need or to store just the values you need such as a user name.</p>
+<p>That's it for the config file (for now).</p>
+<h1 id="razor-page">Razor Page</h1>
+<p>Now we have to use the data we fetched from the GitHub module inside a page. Create a file named <code>index.cshtml</code> inside a folder named <code>input</code> (<code>input</code> is where Wyam looks for input files). Here's what the <code>index.cshtml</code> file should contain:</p>
+<pre><code>&#64;using Octokit;
+&#64;{
+    User user = Model.Get&lt;User&gt;(&quot;User&quot;);
+    IReadOnlyList&lt;Repository&gt; repos = Model.Get&lt;IReadOnlyList&lt;Repository&gt;&gt;(&quot;Repos&quot;);
+}
+&lt;html&gt;
+    &lt;head&gt;
+        &lt;title&gt;&#64;user.Name&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        &lt;img src=&quot;&#64;user.AvatarUrl&quot;&gt;
+        &lt;h1&gt;&#64;user.Name&lt;/h1&gt;
+        &lt;h2&gt;&#64;&#64;&#64;user.Login&lt;/h2&gt;
+        &lt;p&gt;&lt;a href=&quot;&#64;user.HtmlUrl&quot;&gt;Link&lt;/a&gt;&lt;/p&gt;
+        &lt;p&gt;&#64;user.Bio&lt;/p&gt;
+        &lt;p&gt;Created at &#64;user.CreatedAt.ToString(&quot;MM/dd/yyyy h:mm tt&quot;)&lt;/p&gt;
+        &lt;hr /&gt;
+        &lt;h2&gt;Repositories&lt;/h2&gt;
+        &#64;foreach(Repository repo in repos.Where(x =&gt; !x.Fork).OrderByDescending(x =&gt; x.StargazersCount))
+        {
+            &lt;h3&gt;&#64;repo.Name&lt;/h3&gt;
+            &lt;p&gt;&#64;repo.StargazersCount stars, &#64;repo.ForksCount forks&lt;/p&gt;
+            &lt;p&gt;&lt;a href=&quot;&#64;repo.HtmlUrl&quot;&gt;Link&lt;/a&gt;&lt;/p&gt;
+            &#64;if(repo.Homepage != null)
+            {
+                &lt;p&gt;&lt;a href=&quot;&#64;repo.Homepage&quot;&gt;Homepage&lt;/a&gt;&lt;/p&gt;                    
+            }  
+            &lt;p&gt;&#64;repo.Description&lt;/p&gt;  
+            &lt;p&gt;Created at &#64;repo.CreatedAt.ToString(&quot;MM/dd/yyyy h:mm tt&quot;)&lt;/p&gt;
+        }
+    &lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<p>This is mostly just standard Razor syntax, but let's break it down a bit. At the top of the file we're including the <code>Octokit</code> namespace. Wyam will automatically reference all assemblies you include in your configuration file, including their dependencies. Since Octokit is a dependency of Wyam.GitHub, that assembly is loaded and available. We still have to tell the Razor page to bring the Octokit namespace into scope though.</p>
+<p>Next we're pulling the Octokit objects we stored in metadata and which were made available as the Razor page's model into local variable to make using them a little easier. This part is optional, but writing <code>&#64;user.Name</code> is preferable to <code>&#64;Model.Get&lt;User&gt;(&quot;User&quot;).Name</code> if we're going to be accessing those model properties a lot.</p>
+<p>The rest of the page is bare-minimum Razor and HTML to display information about the requested GitHub user.</p>
+<p>If you don't already have Wyam, <a href="https://wyam.io/docs/usage/obtaining">go download it</a> and then run <code>wyam -p</code> from the directory where your <code>config.wyam</code> file is located. Once the build is done, you should be able to preview the site at <code>http://localhost:5080/</code>:</p>
+<p><img src="/posts/images/github-wyam1.png" class="img-responsive"></img></p>
+<h1 id="making-it-pretty">Making It Pretty</h1>
+<p>It works, but it's ugly. Let's go to my favorite site for web templates, <a href="https://html5up.net/">HTML5 UP!</a>. I think <a href="https://html5up.net/read-only">Read Only</a> will work well so let's use that one. Download and unzip the theme into a temporary location and then copy everything but the index.html file to the <code>input</code> directory we created earlier (you should end up with an <code>assets</code> and an <code>images</code> folder inside your <code>input</code> folder).</p>
+<p>First we need to add one more pipeline to our <code>config.wyam</code> file to copy these extra theme files to your output directory using the <a href="https://wyam.io/modules/copyfiles">CopyFiles module</a>. Place this under your existing pipeline:</p>
+<pre><code class="language-csharp">Pipelines.Add(
+    // Copy all resources to the output folder
+    CopyFiles(&quot;**/*{!.cshtml,.*}&quot;)
+);
+</code></pre>
+<p>Now we need to take the code that's already in our <code>index.cshtml</code> file and insert it into the right places in the theme's <code>index.html</code> file. I'll spare you the details since this really has nothing to do with Wyam directly. The end result is the code below, copy over the content in your <code>index.cshtml</code> file with this:</p>
+<pre><code>&#64;using Octokit;
+&#64;{
+    User user = Model.Get&lt;User&gt;(&quot;User&quot;);
+    IReadOnlyList&lt;Repository&gt; repos = Model.Get&lt;IReadOnlyList&lt;Repository&gt;&gt;(&quot;Repos&quot;);
+}
+&lt;!DOCTYPE HTML&gt;
+&lt;!--
+	Read Only by HTML5 UP
+	html5up.net | ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+--&gt;
+&lt;html&gt;
+	&lt;head&gt;
+		&lt;title&gt;&#64;user.Name&lt;/title&gt;
+		&lt;meta charset=&quot;utf-8&quot; /&gt;
+		&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot; /&gt;
+		&lt;!--[if lte IE 8]&gt;&lt;script src=&quot;assets/js/ie/html5shiv.js&quot;&gt;&lt;/script&gt;&lt;![endif]--&gt;
+		&lt;link rel=&quot;stylesheet&quot; href=&quot;assets/css/main.css&quot; /&gt;
+		&lt;!--[if lte IE 8]&gt;&lt;link rel=&quot;stylesheet&quot; href=&quot;assets/css/ie8.css&quot; /&gt;&lt;![endif]--&gt;
+	&lt;/head&gt;
+	&lt;body&gt;
+        &lt;section id=&quot;header&quot;&gt;
+            &lt;header&gt;
+                &lt;span class=&quot;image avatar&quot;&gt;&lt;img src=&quot;&#64;user.AvatarUrl&quot; alt=&quot;&quot; /&gt;&lt;/span&gt;
+                &lt;h1 id=&quot;logo&quot;&gt;&lt;a href=&quot;&#64;user.HtmlUrl&quot;&gt;&#64;user.Name&lt;/a&gt;&lt;/h1&gt;
+                &lt;p&gt;&#64;&#64;&#64;user.Login&lt;/p&gt;
+            &lt;/header&gt;
+            &lt;nav id=&quot;nav&quot;&gt;
+                &lt;ul&gt;
+                    &lt;li&gt;&lt;a href=&quot;#one&quot; class=&quot;active&quot;&gt;About&lt;/a&gt;&lt;/li&gt;
+                    &lt;li&gt;&lt;a href=&quot;#two&quot;&gt;Repositories&lt;/a&gt;&lt;/li&gt;
+                &lt;/ul&gt;
+            &lt;/nav&gt;
+            &lt;footer&gt;
+                &lt;ul class=&quot;icons&quot;&gt;
+                    &lt;li&gt;&lt;a href=&quot;#&quot; class=&quot;icon fa-twitter&quot;&gt;&lt;span class=&quot;label&quot;&gt;Twitter&lt;/span&gt;&lt;/a&gt;&lt;/li&gt;
+                    &lt;li&gt;&lt;a href=&quot;#&quot; class=&quot;icon fa-facebook&quot;&gt;&lt;span class=&quot;label&quot;&gt;Facebook&lt;/span&gt;&lt;/a&gt;&lt;/li&gt;
+                    &lt;li&gt;&lt;a href=&quot;#&quot; class=&quot;icon fa-instagram&quot;&gt;&lt;span class=&quot;label&quot;&gt;Instagram&lt;/span&gt;&lt;/a&gt;&lt;/li&gt;
+                    &lt;li&gt;&lt;a href=&quot;#&quot; class=&quot;icon fa-github&quot;&gt;&lt;span class=&quot;label&quot;&gt;Github&lt;/span&gt;&lt;/a&gt;&lt;/li&gt;
+                    &lt;li&gt;&lt;a href=&quot;#&quot; class=&quot;icon fa-envelope&quot;&gt;&lt;span class=&quot;label&quot;&gt;Email&lt;/span&gt;&lt;/a&gt;&lt;/li&gt;
+                &lt;/ul&gt;
+            &lt;/footer&gt;
+        &lt;/section&gt;
+        &lt;div id=&quot;wrapper&quot;&gt;
+            &lt;div id=&quot;main&quot;&gt;
+                &lt;section id=&quot;one&quot;&gt;
+                    &lt;div class=&quot;container&quot;&gt;
+                        &lt;header class=&quot;major&quot;&gt;
+                            &lt;h2&gt;&#64;user.Name&lt;/h2&gt;
+                            &lt;p&gt;&#64;user.Bio&lt;/p&gt;
+                        &lt;/header&gt;
+                        &lt;p&gt;Slinging code on GitHub since &#64;user.CreatedAt.ToString(&quot;MM/dd/yyyy&quot;)&lt;/p&gt;
+                    &lt;/div&gt;
+                &lt;/section&gt;
+                &lt;section id=&quot;two&quot;&gt;
+                    &lt;div class=&quot;container&quot;&gt;
+                        &lt;header class=&quot;major&quot;&gt;
+                            &lt;h2&gt;Repositories&lt;/h2&gt;
+                        &lt;/header&gt;
+                        &lt;div class=&quot;features&quot;&gt;
+                            &#64;foreach(Repository repo in repos.Where(x =&gt; !x.Fork).OrderByDescending(x =&gt; x.StargazersCount))
+                            {
+                                &lt;article&gt;
+                                    &lt;div class=&quot;inner&quot;&gt;
+                                        &lt;h4&gt;&lt;a href=&quot;&#64;repo.HtmlUrl&quot;&gt;&#64;repo.Name&lt;/a&gt;&lt;/h4&gt;
+                                        &lt;p&gt;&#64;repo.Description&lt;/p&gt;
+                                        &lt;ul class=&quot;feature-icons&quot;&gt;
+                                            &lt;li class=&quot;fa-star&quot;&gt;&#64;repo.StargazersCount stars&lt;/li&gt;
+                                            &lt;li class=&quot;fa-code-fork&quot;&gt;&#64;repo.ForksCount forks&lt;/li&gt;
+                                            &#64;if(repo.Homepage != null)
+                                            {
+                                                &lt;li class=&quot;fa-bolt&quot;&gt;&lt;a href=&quot;&#64;repo.Homepage&quot;&gt;Homepage&lt;/a&gt;&lt;/li&gt;
+                                            }
+                                        &lt;/ul&gt;
+                                    &lt;/div&gt;
+                                &lt;/article&gt;
+                            }
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+                &lt;/section&gt;
+            &lt;/div&gt;
+            &lt;section id=&quot;footer&quot;&gt;
+                &lt;div class=&quot;container&quot;&gt;
+                    &lt;ul class=&quot;copyright&quot;&gt;
+                        &lt;li&gt;&amp;copy; Untitled. All rights reserved.&lt;/li&gt;&lt;li&gt;Design: &lt;a href=&quot;http://html5up.net&quot;&gt;HTML5 UP&lt;/a&gt;&lt;/li&gt;
+                    &lt;/ul&gt;
+                &lt;/div&gt;
+            &lt;/section&gt;
+        &lt;/div&gt;
+        &lt;script src=&quot;assets/js/jquery.min.js&quot;&gt;&lt;/script&gt;
+        &lt;script src=&quot;assets/js/jquery.scrollzer.min.js&quot;&gt;&lt;/script&gt;
+        &lt;script src=&quot;assets/js/jquery.scrolly.min.js&quot;&gt;&lt;/script&gt;
+        &lt;script src=&quot;assets/js/skel.min.js&quot;&gt;&lt;/script&gt;
+        &lt;script src=&quot;assets/js/util.js&quot;&gt;&lt;/script&gt;
+        &lt;!--[if lte IE 8]&gt;&lt;script src=&quot;assets/js/ie/respond.min.js&quot;&gt;&lt;/script&gt;&lt;![endif]--&gt;
+        &lt;script src=&quot;assets/js/main.js&quot;&gt;&lt;/script&gt;
+	&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<p>And there you have it, your very own static GitHub about page:</p>
+<p><img src="/posts/images/github-wyam2.png" class="img-responsive"></img></p>
+
+
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'somedave'; // required: replace example with your forum shortname
+    var disqus_identifier = 'creating-a-one-page-github-profile-with-wyam';
+    var disqus_title = 'Creating A One-Page GitHub Profile With Wyam';
+    var disqus_url = 'https://daveaglick.com/posts/creating-a-one-page-github-profile-with-wyam';
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+    
+    (function () {
+        var s = document.createElement('script'); s.async = true;
+        s.type = 'text/javascript';
+        s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+        (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- Footer -->  
+  <footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 text-center">
+                <ul class="list-inline text-center">
+                    <li class="list-inline-item">
+                        <a href="https://twitter.com/daveaglick">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    <li class="list-inline-item">
+                        <a href="https://github.com/daveaglick">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                </ul>
+                <div>
+                    <p class="copyright text-muted">
+                        Copyright © 2020 by Dave Glick. All jams and jellies preserved. The opinions expressed herein are my own and do not represent those of my employer or any other third-party views in any way. This work is licensed under a <a href="http://creativecommons.org/licenses/by/4.0/" rel="license">Creative Commons Attribution 4.0 International License</a>.
+                    </p>
+                </div>
+                <ul class="list-inline text-center small">                                
+                        <li class="list-inline-item">
+                        <a href="/feed.rss"><i class="fa fa-rss"></i> RSS Feed</a>
+                        </li>
+                        <li class="list-inline-item">
+                        <a href="/feed.atom"><i class="fa fa-rss"></i> Atom Feed</a>
+                        </li>
+                </ul>
+                <div class="font-weight-bold small">
+                    <a href="https://github.com/daveaglick/daveaglick"><i class="fab fa-github"></i> This Site on GitHub</a>
+                </div>
+                <div class="font-weight-bold small">
+                    <a href="https://statiq.dev">Generated by Statiq</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+  
+  <script type="text/javascript">
+    // Google Analytics
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r; i[r] = i[r] || function () {
+        (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date(); a = s.createElement(o),
+        m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = g; m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+
+    ga('create', 'UA-54470483-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+  
+
+  <!-- Bootstrap core JavaScript -->
+  <script src="/vendor/jquery/jquery.min.js"></script>
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Custom scripts for this template -->
+  <script src="/js/clean-blog.js"></script>
+
+</body>
+
+</html>

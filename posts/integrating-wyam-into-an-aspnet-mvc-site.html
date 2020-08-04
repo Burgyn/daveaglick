@@ -1,0 +1,292 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="The personal blog of Dave Glick">
+
+  <title>Dave Glick - Integrating Wyam Into An ASP.NET MVC Site</title>
+
+      <link type="application/rss+xml" rel="alternate" href="/feed.rss" />
+      <link type="application/atom+xml" rel="alternate" href="/feed.atom" />
+  
+  <meta name="application-name" />
+  <meta name="msapplication-tooltip" />
+  <meta name="msapplication-starturl" content="/" />
+
+  <meta property="og:title" content="Dave Glick - Integrating Wyam Into An ASP.NET MVC Site" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://daveaglick.com/posts/integrating-wyam-into-an-aspnet-mvc-site" />
+  
+  <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+  <!-- Bootstrap core CSS -->
+  <link href="/vendor/bootstrap/scss/bootstrap.css" rel="stylesheet">
+
+  <!-- Custom fonts for this template -->
+  <link href="/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+  <link href="/vendor/fontawesome-free/css/brands.min.css" rel="stylesheet" type="text/css">
+  <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css' data-no-mirror>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css' data-no-mirror>
+  
+  <!-- Custom styles for this template -->
+  <link href="/scss/clean-blog.css" rel="stylesheet">
+  
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.19.0/components/prism-core.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.19.0/plugins/autoloader/prism-autoloader.min.js" data-no-mirror></script>
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.0.0/dist/quicklink.umd.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.19.0/themes/prism.css">
+  
+  
+
+
+  
+
+</head>
+
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
+  <div class="container">
+    <a class="navbar-brand" href="/">Dave Glick</a>
+    <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+      Menu
+      <i class="fas fa-bars"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarResponsive">
+      <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="/tags">Tags</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/archive">Archive</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/speaking">Talks</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/projects">Projects</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/about">About</a>
+            </li>
+</ul>
+    </div>
+  </div>
+</nav>
+
+  <!-- Page Header -->
+  <header class="masthead">
+  <div class="overlay"></div>
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="post-heading">
+          <h1>
+            Integrating Wyam Into An ASP.NET MVC Site
+          </h1>
+            <h2 class="subheading">I heard you like static sites, so I put some static site in your dynamic site</h2>
+              <div class="meta">Published on Thursday, September 1, 2016</div>
+                <div class="mt-3">
+                      <a href="/tags/wyam" class="badge badge-light"> Wyam</a>
+                      <a href="/tags/static-site-generator" class="badge badge-light"> static site generator</a>
+                      <a href="/tags/open-source" class="badge badge-light"> open source</a>
+                      <a href="/tags/asp.net" class="badge badge-light"> ASP.NET</a>
+                      <a href="/tags/asp.net-mvc" class="badge badge-light"> ASP.NET MVC</a>
+                </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+  <!-- Main Content -->
+  <div class="container"> 
+    <div class="row">
+      <div id="content" class="col-md-12">  
+        <p>I've seen an interesting static site use case come up a few times recently where someone wants to use a static generator <em>along</em> with an existing dynamic site. The idea is that they would generate certain resources statically at build-time of the dynamic site and then only rely on the dynamic runtime for pages that really need it. I've long suspected that Wyam would be great in this role, particularly for ASP.NET MVC sites given that it can read the same Razor layout files. I finally got motivated enough to give this a try and will detail how to do it in this blog post. It turns out it's not hard at all and works really well once you've gotten everything set up.</p>
+<p>For the purpose of this post, we'll be modifying a stock ASP.NET MVC web site. Note that there are probably a dozen different ways you could accomplish this type of integration and what I'm describing here is just one of them. Since Wyam is essentially just a console application, any process by which you run Wyam before running the ASP.NET compiler should work. For example, you could use <a href="http://cakebuild.net/">Cake</a> to build your ASP.NET MVC site and instead of running Wyam as a pre-build event as described below, you'd run it via the <a href="http://cakebuild.net/addins/category/static%20site%20generation">Wyam Cake addin</a>.</p>
+<h1 id="install-wyam-into-the-site">Install Wyam Into The Site</h1>
+<p>The first step is to get Wyam onto your system. Since we're already talking about a .NET project, let's go ahead and pull down the <a href="https://www.nuget.org/packages/Wyam">Wyam tools package</a> from NuGet. It's just called &quot;Wyam&quot; and can be installed via the NuGet management UI or the Package Management Console. Note that the package is currently prerelease so you might have to turn on prerelease package searching in the NuGet UI to see it.</p>
+<p>Since the package is a tools package, it'll unpack the Wyam CLI executable in the <code>tools</code> subfolder where NuGet installed the package. Generally, this will be something like <code>packages/Wyam.0.13.5-beta/tools</code> (from the root of your solution).</p>
+<h1 id="add-a-pre-build-event">Add a Pre-Build Event</h1>
+<p>The next step is to add a pre-build event that runs Wyam every time the site is built. This is the glue that generates your static resources for inclusion by the ASP.NET compiler. Open up the project properties, go to the &quot;Build Events&quot; tab, and add the following pre-build event:</p>
+<pre><code>&quot;$(SolutionDir)\packages\Wyam.0.13.5-beta\tools\wyam.exe&quot; &quot;$(SolutionDir)\config.wyam&quot;
+</code></pre>
+<p>Make sure to match the Wyam package folder name to the version you actually pulled down. Note that this will also need to be updated if you update the package.</p>
+<p>Note that you can also run this same command directly from your command line to test the Wyam generation. That will let you iterate a bit faster and give you a bit more visibility while you're setting everything up and troubleshooting over just running Wyam during the ASP.NET site build.</p>
+<h1 id="add-the-config-file">Add The Config File</h1>
+<p>Note that the build event above calls the Wyam executable and tells it to use the <code>config.wyam</code> configuration file found at the root of the Solution. Let's go ahead and create that file since the build event will look for it. It should look something like this:</p>
+<pre><code>#n -p Wyam.Markdown
+#n -p Wyam.Yaml
+#n -p Wyam.Razor
+
+FileSystem.InputPaths.Add(&quot;ProjectName/Posts&quot;);
+FileSystem.OutputPath = &quot;ProjectName/Blog&quot;;
+
+Pipelines.Add(&quot;Posts&quot;,
+	// Read all Markdown files under the &quot;Posts&quot; directory
+	ReadFiles(&quot;*.md&quot;),
+	// Load any frontmatter and parse it as YAML markup
+	FrontMatter(Yaml()),
+	// Render the Markdown content
+	Markdown(),
+	// Compile and render the page layout template
+	Razor(),
+	// Write the files as HTML
+	WriteFiles(&quot;.html&quot;),
+	// Order the files by publish date
+	OrderBy(&#64;doc.Get&lt;DateTime&gt;(&quot;Published&quot;)).Descending()
+);
+
+Pipelines.Add(&quot;Index&quot;,
+	// Read all non-layout Razor files under the &quot;Posts&quot; directory
+	ReadFiles(&quot;**/{!_,}*.cshtml&quot;),
+	// Evaluate the Razor page(s)
+	Razor(),
+	// Write the file(s) as HTML
+	WriteFiles(&quot;.html&quot;)
+);
+</code></pre>
+<p>You can add it as a Solution item if you'd like to be able to edit it from Visual Studio, otherwise you can just edit it with a text editor. The pipeline in the example above will check for all Markdown files, process any YAML frontmatter they have, render them with the existing Razor layout files (more on this below), output them as static HTML files, and then order them by post date. A second pipeline will render Razor files (for example, the list the posts). Generally, any sort of Wyam configuration file you would normally use can also be used here.</p>
+<p>The main thing to notice about the configuration file is that we're setting custom input and output folders. This lets us put the input Markdown files (and associated layouts for the static pages) right in our ASP.NET project in the <code>Posts</code> folder and will generate the static HTML files for inclusion in our site in the <code>Blog</code> folder.</p>
+<h1 id="a-note-about-razor-layouts">A Note About Razor Layouts</h1>
+<p>One of the compelling reasons to generate static resources with Wyam inside your ASP.NET MVC site is that Wyam can make use of your existing Razor layout files...with some caveats. Mainly, you can't have any dynamic code in your layout. For example, things like the HTTP request context simply aren't available when generating pages statically. Also note that while the underlying Razor parser is very similar, Wyam Razor pages aren't <em>quite</em> the same as those in ASP.NET MVC. For example, many of the HTML helpers you might be used to aren't available. You may need to par down your top-level Razor layout to get it to work with Wyam.</p>
+<p>If you do want your layout to have some dynamic code, one approach is to create a very simple outer layout and then two different inner layouts. One of the inner layouts can contain the dynamic code, HTML helpers, etc. that you have when compiling with ASP.NET MVC and should be used for your dynamic pages (probably specified by the ASP.NET MVC <code>_ViewStart.cshtml</code> file in your <code>Views</code> folder). The other inner layout can be used by your static pages and should go in the <code>Posts</code> folder that Wyam uses as input.</p>
+<h1 id="input-files">Input Files</h1>
+<p>I mentioned above that we'll pull the Markdown files from the <code>Posts</code> folder. Let's go ahead and make one that looks like this:</p>
+<pre><code>Title: First Post
+Published: 8/10/2016
+---
+This is my first post!
+</code></pre>
+<p>Then go ahead and create a couple more. At build-time, these will get read and processed by Wyam and the resulting HTML files will be placed in the <code>Blog</code> folder.</p>
+<p>You can also add the <code>_ViewStart.cshtml</code> and <code>_Layout.cshtml</code> for your static pages in this folder.</p>
+<p>Note that any files in your <code>Posts</code> static input folder should have a Build Action of None if you include the file in your project. Also note that the static input files don't <em>have</em> to be included in your project, Wyam will pick them up either way.</p>
+<h1 id="output-files">Output Files</h1>
+<p>When Wyam is run, it will place the final static results in the <code>Blog</code> folder. To make sure these files get included in your ASP.NET MVC build, you'll need to add the following to your <code>.csproj</code> file for the project (unfortunatly, opening the <code>.csproj</code> file is the only way to add a wildcard pattern like this right now):</p>
+<pre><code>&lt;Content Include=&quot;Blog\**\*.*&quot; /&gt;
+</code></pre>
+<p>This will ensure that each build includes all of the output files from Wyam every time.</p>
+<h1 id="putting-it-together">Putting It Together</h1>
+<p>So let's recap:</p>
+<ul>
+<li>Install the Wyam tools NuGet package</li>
+<li>Add a pre-build event</li>
+<li>Make sure Razor layouts will work</li>
+<li>Add your Markdown files</li>
+<li>Add a wildcard content item to the project</li>
+</ul>
+<p>When you're done, you should have something that looks kind of like this:</p>
+<img src="/posts/images/wyam-aspnet.png" alt="ASP.NET With Wyam" class="img-responsive" style="margin-top: 6px; margin-bottom: 6px;">
+<p>You can see all of this in action in the complete example at <a href="https://github.com/Wyamio/Wyam/tree/develop/examples/AspNetMvc">https://github.com/Wyamio/Wyam/tree/develop/examples/AspNetMvc</a>.</p>
+<p>If you have any questions, just let me know in the comments below.</p>
+
+
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'somedave'; // required: replace example with your forum shortname
+    var disqus_identifier = 'integrating-wyam-into-an-aspnet-mvc-site';
+    var disqus_title = 'Integrating Wyam Into An ASP.NET MVC Site';
+    var disqus_url = 'https://daveaglick.com/posts/integrating-wyam-into-an-aspnet-mvc-site';
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+    
+    (function () {
+        var s = document.createElement('script'); s.async = true;
+        s.type = 'text/javascript';
+        s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+        (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- Footer -->  
+  <footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 text-center">
+                <ul class="list-inline text-center">
+                    <li class="list-inline-item">
+                        <a href="https://twitter.com/daveaglick">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    <li class="list-inline-item">
+                        <a href="https://github.com/daveaglick">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                </ul>
+                <div>
+                    <p class="copyright text-muted">
+                        Copyright © 2020 by Dave Glick. All jams and jellies preserved. The opinions expressed herein are my own and do not represent those of my employer or any other third-party views in any way. This work is licensed under a <a href="http://creativecommons.org/licenses/by/4.0/" rel="license">Creative Commons Attribution 4.0 International License</a>.
+                    </p>
+                </div>
+                <ul class="list-inline text-center small">                                
+                        <li class="list-inline-item">
+                        <a href="/feed.rss"><i class="fa fa-rss"></i> RSS Feed</a>
+                        </li>
+                        <li class="list-inline-item">
+                        <a href="/feed.atom"><i class="fa fa-rss"></i> Atom Feed</a>
+                        </li>
+                </ul>
+                <div class="font-weight-bold small">
+                    <a href="https://github.com/daveaglick/daveaglick"><i class="fab fa-github"></i> This Site on GitHub</a>
+                </div>
+                <div class="font-weight-bold small">
+                    <a href="https://statiq.dev">Generated by Statiq</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+  
+  <script type="text/javascript">
+    // Google Analytics
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r; i[r] = i[r] || function () {
+        (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date(); a = s.createElement(o),
+        m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = g; m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+
+    ga('create', 'UA-54470483-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+  
+
+  <!-- Bootstrap core JavaScript -->
+  <script src="/vendor/jquery/jquery.min.js"></script>
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Custom scripts for this template -->
+  <script src="/js/clean-blog.js"></script>
+
+</body>
+
+</html>

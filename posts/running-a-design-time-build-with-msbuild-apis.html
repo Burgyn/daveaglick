@@ -1,0 +1,535 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="The personal blog of Dave Glick">
+
+  <title>Dave Glick - Running A Design-Time Build With MSBuild APIs</title>
+
+      <link type="application/rss+xml" rel="alternate" href="/feed.rss" />
+      <link type="application/atom+xml" rel="alternate" href="/feed.atom" />
+  
+  <meta name="application-name" />
+  <meta name="msapplication-tooltip" />
+  <meta name="msapplication-starturl" content="/" />
+
+  <meta property="og:title" content="Dave Glick - Running A Design-Time Build With MSBuild APIs" />
+    <meta property="og:image" content="/images/excavators.jpg" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://daveaglick.com/posts/running-a-design-time-build-with-msbuild-apis" />
+  
+  <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+  <!-- Bootstrap core CSS -->
+  <link href="/vendor/bootstrap/scss/bootstrap.css" rel="stylesheet">
+
+  <!-- Custom fonts for this template -->
+  <link href="/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+  <link href="/vendor/fontawesome-free/css/brands.min.css" rel="stylesheet" type="text/css">
+  <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css' data-no-mirror>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css' data-no-mirror>
+  
+  <!-- Custom styles for this template -->
+  <link href="/scss/clean-blog.css" rel="stylesheet">
+  
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.19.0/components/prism-core.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.19.0/plugins/autoloader/prism-autoloader.min.js" data-no-mirror></script>
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.0.0/dist/quicklink.umd.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.19.0/themes/prism.css">
+  
+  
+
+
+  
+
+</head>
+
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
+  <div class="container">
+    <a class="navbar-brand" href="/">Dave Glick</a>
+    <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+      Menu
+      <i class="fas fa-bars"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarResponsive">
+      <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="/tags">Tags</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/archive">Archive</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/speaking">Talks</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/projects">Projects</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/about">About</a>
+            </li>
+</ul>
+    </div>
+  </div>
+</nav>
+
+  <!-- Page Header -->
+  <header class="masthead" style="background-image: url(&quot;/images/excavators.jpg&quot;)">
+  <div class="overlay"></div>
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="post-heading">
+          <h1>
+            Running A Design-Time Build With MSBuild APIs
+          </h1>
+            <h2 class="subheading">Getting source files, references, and build properties without invoking the compiler.</h2>
+              <div class="meta">Published on Wednesday, September 27, 2017</div>
+                <div class="mt-3">
+                      <a href="/tags/msbuild" class="badge badge-light"> msbuild</a>
+                </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+  <!-- Main Content -->
+  <div class="container"> 
+    <div class="row">
+      <div id="content" class="col-md-12">  
+        <p>The MSBuild APIs are now <a href="https://www.nuget.org/packages?q=microsoft.build">on NuGet</a> and target <code>netstandard</code> which is awesome, but unfortunately they won't work out of the box with certain <a href="https://github.com/dotnet/docfx/issues/1752">platform and project type combinations</a>. The reasons are complex, but basically come down to MSBuild <a href="https://github.com/dotnet/project-system#what-is-a-project-system">not being a self contained project system</a>. In order for the MSBuild APIs to work with certain project types like SDK-style, MSBuild needs to be told where to find the extra stuff that it needs (like the SDK targets) before it can process the project file. Additionally, if all you care about is metadata like the resolved source files, references, and project properties then you don't actually have to run the compiler. Once you can open the project in MSBuild you can tell it to perform a <a href="https://github.com/dotnet/project-system/blob/master/docs/design-time-builds.md">design-time build</a> which gives you this information without the performance hit of actually compiling the project. Doing so can be valuable for a number of different use cases including <a href="https://github.com/daveaglick/Scripty">code generation</a>, <a href="https://wyam.io">documentation engines</a>, and <a href="https://cakebuild.net">build orchestration</a>. This post explains some tricks for getting MSBuild to work for any project and then using it to get project metadata without triggering a compilation.</p>
+<h1 id="some-background">Some Background</h1>
+<p>Before we dive into how to use the MSBuild APIs, let's take a quick step back and review (or introduce) some MSBuild concepts.</p>
+<ul>
+<li>Project files such as <code>.csproj</code> are actually MSBuild files that tell MSBuild how to build your project by defining targets, tasks, and all the other associated activity that goes into the build process.</li>
+<li>MSBuild is not a declarative language. That means that you have to evaluate an MSBuild file to determine what it means. You can't just look at the file and infer what source files are involved in build, where the references are located, etc.</li>
+<li>An MSBuild <em>task</em> is a reusable build action, often implemented in code, that MSBuild can execute in the process of evaluating an MSBuild file.</li>
+<li>An MSBuild <em>target</em> is a collection of tasks (often just 1 but can be many more) designed to perform a specific function within the build. Reusable targets are often defined in a <code>.targets</code> file. This is partly why MSBuild needs to know where the specific .NET SDK is located for new SDK-style projects: the SDK contains <code>.targets</code> files with the targets and tasks for the new project system.</li>
+<li>There are many different kinds of MSBuild project files. I haven't been able to locate an exhaustive list, but the most common are <code>.csproj</code> (for C# projects) and <code>.vbproj</code> (for Visual Basic). There are also different varieties of these project files. For example, a C# <code>.csproj</code> for the new .NET build system will have an <code>SDK</code> attribute and uses different default tasks and targets to simplify the project file structure (often referred to as a &quot;SDK-style projects&quot;).</li>
+<li>The MSBuild APIs are .NET libraries that allow you to open, evaluate, and otherwise work with MSBuild files, tasks, and targets from within your own code.</li>
+</ul>
+<h1 id="opening-with-msbuild">Opening With MSBuild</h1>
+<p>The first step is opening our project with the MSBuild API. You'll need the <a href="https://www.nuget.org/packages/Microsoft.Build/">Microsoft.Build</a> package which includes support for opening and evaluating MSBuild project files along with some other packages:</p>
+<ul>
+<li><a href="https://www.nuget.org/packages/Microsoft.Build/">Microsoft.Build</a></li>
+<li><a href="https://www.nuget.org/packages/Microsoft.Build.Framework/">Microsoft.Build.Framework</a></li>
+<li><a href="https://www.nuget.org/packages/Microsoft.Build.Utilities.Core/">Microsoft.Build.Utilities.Core</a></li>
+<li><a href="https://www.nuget.org/packages/Microsoft.Build.Tasks.Core/">Microsoft.Build.Tasks.Core</a></li>
+</ul>
+<p>Once you've installed the packages, we would normally write this and be done:</p>
+<pre><code>Project project = new Project(&#64;&quot;C:\Code\MyProject.csproj&quot;);
+</code></pre>
+<h2 id="finding-the-tools">Finding The Tools</h2>
+<p>Here's where things start to get tricky though. If you're trying to open a .NET Framework project that defines <code>ToolsVersion=&quot;15.0&quot;</code> (in other words, Visual Studio 2017) you'll probably get an exception like this:</p>
+<pre><code>The tools version &quot;15.0&quot; is unrecognized. Available tools versions are &quot;12.0&quot;, &quot;14.0&quot;, &quot;2.0&quot;, &quot;3.5&quot;, &quot;4.0&quot;.
+</code></pre>
+<p>What that means is that the MSBuild libraries in the Microsoft.Build package don't have any built-in knowledge of Visual Studio 2017 and where to find <code>msbuild.exe</code>. We have to help them out for these types of projects. Thankfully there's already some utilities to solve this particular problem. Install the <a href="https://www.nuget.org/packages/Microsoft.Build.Utilities.Core/">Microsoft.Build.Utilties.Core</a> package and then use this code:</p>
+<pre><code>string toolsPath = ToolLocationHelper.GetPathToBuildToolsFile(&quot;msbuild.exe&quot;, ToolLocationHelper.CurrentToolsVersion);
+ProjectCollection projectCollection = new ProjectCollection();
+projectCollection.AddToolset(new Toolset(ToolLocationHelper.CurrentToolsVersion, Path.GetDirectoryName(toolsPath), projectCollection, string.Empty));
+Project project = projectCollection.LoadProject(&#64;&quot;C:\Code\MyProject.csproj&quot;);
+</code></pre>
+<p>Notice that we're now creating a <code>ProjectCollection</code> and using that to get the project. That's because you can only set tool resolution information at the <code>ProjectCollection</code> level. We were actually always creating a <code>ProjectCollection</code>, it's just that the <code>Project</code> constructor we used earlier creates a default global one for us.</p>
+<h3 id="but-wait">But Wait!</h3>
+<p>It turns out <a href="https://github.com/Microsoft/msbuild/issues/2369">there's a bug</a> with the 15.3 release of Visual Studio. The <code>ToolLocationHelper</code> can't find the tools with this version of Visual Studio so we have to help it out with a fallback. There's a package named <a href="https://www.nuget.org/packages/Microsoft.VisualStudio.Setup.Configuration.Interop/">Microsoft.VisualStudio.Setup.Configuration.Interop</a> that can help get the Visual Studio installation location, but it's .NET Framework 3.5 only so it won't work in a <code>netstandard</code> library. As an alternative, we can poll for well known locations of Visual Studio (idea from the amazing <a href="https://github.com/KirillOsenkov/MSBuildStructuredLog">MSBuildStructuredLog</a> project).</p>
+<p>So to put it all together we end up with something that looks like this:</p>
+<pre><code>public Project GetProject(string projectPath)
+{
+    ProjectCollection projectCollection = new ProjectCollection();
+    projectCollection.AddToolset(new Toolset(ToolLocationHelper.CurrentToolsVersion, GetToolsPath(), projectCollection, string.Empty));
+    Project project = projectCollection.LoadProject(projectPath);
+}
+
+public static string GetToolsPath()
+{
+    string toolsPath = ToolLocationHelper.GetPathToBuildToolsFile(&quot;msbuild.exe&quot;, ToolLocationHelper.CurrentToolsVersion);
+    if (string.IsNullOrEmpty(toolsPath))
+    {
+        toolsPath = PollForToolsPath().FirstOrDefault();
+    }
+    if (string.IsNullOrEmpty(toolsPath))
+    {
+        throw new Exception(&quot;Could not locate the tools (MSBuild) path.&quot;);
+    }
+    return Path.GetDirectoryName(toolsPath);
+}
+
+public static string[] PollForToolsPath()
+{
+    var programFilesX86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+    var windows = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+
+    return new[]
+    {
+        Path.Combine(programFilesX86, &#64;&quot;Microsoft Visual Studio\2017\Enterprise\MSBuild\15.0\Bin\MSBuild.exe&quot;),
+        Path.Combine(programFilesX86, &#64;&quot;Microsoft Visual Studio\2017\Professional\MSBuild\15.0\Bin\MSBuild.exe&quot;),
+        Path.Combine(programFilesX86, &#64;&quot;Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin\MSBuild.exe&quot;),
+        Path.Combine(programFilesX86, &#64;&quot;MSBuild\14.0\Bin\MSBuild.exe&quot;),
+        Path.Combine(programFilesX86, &#64;&quot;MSBuild\12.0\Bin\MSBuild.exe&quot;)
+    }.Where(File.Exists).ToArray();
+}
+</code></pre>
+<h2 id="setting-global-properties">Setting Global Properties</h2>
+<p>Now we're getting somewhere. The MSBuild libraries can open the project, but are failing on import:</p>
+<pre><code>The imported project &quot;C:\Microsoft.CSharp.Core.targets&quot; was not found.
+Confirm that the path in the &lt;Import&gt; declaration is correct, and that the file exists on disk.
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\MSBuild\15.0\Bin\Microsoft.CSharp.CurrentVersion.targets
+</code></pre>
+<p>That's because we need to define a bunch of global MSBuild properties that the host (such as Visual Studio) would normally provide. For example, this first error happens because the initial target <code>Microsoft.CSharp.CurrentVersion.targets</code> (which we know how to get to from the tools path we calculated earlier) contains the following definition:</p>
+<pre><code>&lt;CSharpCoreTargetsPath Condition=&quot;'$(CSharpCoreTargetsPath)' == ''&quot;&gt;$(RoslynTargetsPath)\Microsoft.CSharp.Core.targets&lt;/CSharpCoreTargetsPath&gt;
+</code></pre>
+<p>Notice how it's using the property <code>RoslynTargetsPath</code> to locate the <code>Microsoft.CSharp.Core.targets</code> targets file? That's one of a handful of MSBuild global properties we need to provide as the &quot;host&quot;:</p>
+<ul>
+<li><code>SolutionDir</code></li>
+<li><code>MSBuildExtensionsPath</code></li>
+<li><code>MSBuildSDKsPath</code></li>
+<li><code>RoslynTargetsPath</code></li>
+</ul>
+<p>Given the tools path, we can calculate the other paths like this (assuming we found the tools in a Visual Studio directory):</p>
+<pre><code>public Dictionary&lt;string, string&gt; GetGlobalProperties(string projectPath, string toolsPath)
+{
+    string solutionDir = Path.GetDirectoryName(projectPath);
+    string extensionsPath = Path.GetFullPath(Path.Combine(toolsPath, &#64;&quot;..\..\&quot;));
+    string sdksPath = Path.Combine(extensionsPath, &quot;Sdks&quot;);
+    string roslynTargetsPath = Path.Combine(toolsPath, &quot;Roslyn&quot;);
+
+    return new Dictionary&lt;string, string&gt;
+    {
+        { &quot;SolutionDir&quot;, solutionDir },
+        { &quot;MSBuildExtensionsPath&quot;, extensionsPath },
+        { &quot;MSBuildSDKsPath&quot;, sdksPath },
+        { &quot;RoslynTargetsPath&quot;, roslynTargetsPath }
+    };
+}
+</code></pre>
+<p>And now our <code>GetProject()</code> method looks like this after passing the global properties to the <code>ProjectCollection</code>:</p>
+<pre><code>public Project GetProject(string projectPath)
+{
+    string toolsPath = GetToolsPath();
+    Dictionary&lt;string, string&gt; globalProperties = GetGlobalProperties(projectPath, toolsPath);
+    ProjectCollection projectCollection = new ProjectCollection(globalProperties);
+    projectCollection.AddToolset(new Toolset(ToolLocationHelper.CurrentToolsVersion, toolsPath, projectCollection, string.Empty));
+    Project project = projectCollection.LoadProject(projectPath);
+}
+</code></pre>
+<h2 id="sdk-style-projects">SDK-Style Projects</h2>
+<p>Everything we've done so far has helped us get to the point where we can open a legacy MSBuild project, but we'll have a different problem if we try to open a new SDK-style MSBuild project:</p>
+<pre><code>The SDK 'Microsoft.NET.Sdk' specified could not be found.
+</code></pre>
+<p>That's because projects that use the new SDK-style builds have their targets and tasks located in a completely different location. For these types of projects the SDK is distributed separately <a href="https://www.microsoft.com/net/download/core">via .NET Core</a>. That means we need a new way to find the files. It turns out that the most reliable way I could find to do this is to shell out to <code>dotnet --info</code> (based on <a href="https://github.com/OmniSharp/omnisharp-roslyn/blob/78ccc8b4376c73da282a600ac6fb10fce8620b52/src/OmniSharp.Abstractions/Services/DotNetCliService.cs">code from OmniSharp</a>):</p>
+<pre><code>public string GetCoreBasePath(string projectPath)
+{
+    // Ensure that we set the DOTNET_CLI_UI_LANGUAGE environment variable to &quot;en-US&quot; before
+    // running 'dotnet --info'. Otherwise, we may get localized results.
+    string originalCliLanguage = Environment.GetEnvironmentVariable(DOTNET_CLI_UI_LANGUAGE);
+    Environment.SetEnvironmentVariable(DOTNET_CLI_UI_LANGUAGE, &quot;en-US&quot;);
+
+    try
+    {
+        // Create the process info
+        ProcessStartInfo startInfo = new ProcessStartInfo(&quot;dotnet&quot;, &quot;--info&quot;)
+        {
+            // global.json may change the version, so need to set working directory
+            WorkingDirectory = Path.GetDirectoryName(projectPath),
+            CreateNoWindow = true,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
+
+        // Execute the process
+        using (Process process = Process.Start(startInfo))
+        {
+            List&lt;string&gt; lines = new List&lt;string&gt;();
+            process.OutputDataReceived += (_, e) =&gt;
+            {
+                if (!string.IsNullOrWhiteSpace(e.Data))
+                {
+                    lines.Add(e.Data);
+                }
+            };
+            process.BeginOutputReadLine();
+            process.WaitForExit();
+            return ParseCoreBasePath(lines);
+        }
+    }
+    finally
+    {
+        Environment.SetEnvironmentVariable(DOTNET_CLI_UI_LANGUAGE, originalCliLanguage);
+    }
+}
+
+public string ParseCoreBasePath(List&lt;string&gt; lines)
+{
+    if (lines == null || lines.Count == 0)
+    {
+        throw new Exception(&quot;Could not get results from `dotnet --info` call&quot;);
+    }
+
+    foreach (string line in lines)
+    {
+        int colonIndex = line.IndexOf(':');
+        if (colonIndex &gt;= 0 
+            &amp;&amp; line.Substring(0, colonIndex).Trim().Equals(&quot;Base Path&quot;, StringComparison.OrdinalIgnoreCase))
+        {
+            return line.Substring(colonIndex + 1).Trim();
+        }
+    }
+
+    throw new Exception(&quot;Could not locate base path in `dotnet --info` results&quot;);
+}
+</code></pre>
+<p>Once you have the base path for .NET Core, you can set the global properties like this:</p>
+<pre><code>public Dictionary&lt;string, string&gt; GetCoreGlobalProperties(string projectPath, string toolsPath)
+{
+    string solutionDir = Path.GetDirectoryName(projectPath);
+    string extensionsPath = toolsPath;
+    string sdksPath = Path.Combine(toolsPath, &quot;Sdks&quot;);
+    string roslynTargetsPath = Path.Combine(toolsPath, &quot;Roslyn&quot;);
+
+    return new Dictionary&lt;string, string&gt;
+    {
+        { &quot;SolutionDir&quot;, solutionDir },
+        { &quot;MSBuildExtensionsPath&quot;, extensionsPath },
+        { &quot;MSBuildSDKsPath&quot;, sdksPath },
+        { &quot;RoslynTargetsPath&quot;, roslynTargetsPath }
+    };
+}
+</code></pre>
+<p>Which means our project loading code looks like this for SDK-style projects:</p>
+<pre><code>public Project GetCoreProject(string projectPath)
+{
+    string toolsPath = GetCoreBasePath();
+    Dictionary&lt;string, string&gt; globalProperties = GetGlobalProperties(projectPath, toolsPath);
+    ProjectCollection projectCollection = new ProjectCollection(globalProperties);
+    projectCollection.AddToolset(new Toolset(ToolLocationHelper.CurrentToolsVersion, toolsPath, projectCollection, string.Empty));
+    Project project = projectCollection.LoadProject(projectPath);
+}
+</code></pre>
+<h3 id="but-wait-again">But Wait (Again)!</h3>
+<p>At this point you'll still be getting that same exception about not being able to locate the SDK. It turns out there's a strange behavior where MSBuild looks at environment variables to find the SDK. I haven't been able to track down exactly why this is, but trust me on this one. You'll need to add the following before loading the <code>Project</code> to get SDK-style projects to load (we'll get them from the global properties we already set):</p>
+<pre><code>Environment.SetEnvironmentVariable(
+    &quot;MSBuildExtensionsPath&quot;,
+    globalProperties[&quot;MSBuildExtensionsPath&quot;]);
+Environment.SetEnvironmentVariable(
+    &quot;MSBuildSDKsPath&quot;,
+    globalProperties[&quot;MSBuildSDKsPath&quot;]);
+</code></pre>
+<h3 id="the-runtime-matters">The Runtime Matters</h3>
+<p>Note that you'll <em>also</em> need to use the .NET Core SDK if you're running MSBuild from a .NET Core runtime, even if the project you're compiling targets .NET Framework. I'm not entirely sure why, but when running MSBuild APIs from a .NET Core runtime some different targets are used that don't exist in the Visual Studio .NET Framework build chain.</p>
+<h2 id="putting-it-all-together">Putting It All Together</h2>
+<p>At this point we can open both legacy MSBuild projects and those using the new .NET Core SDK. The final bit of code we need is to distinguish between the two. This is relatively easy: MSBuild projects are XML and the root <code>&lt;Project&gt;</code> element will contain an <code>Sdk</code> attribute if it's a SDK-style project and won't if it's not:</p>
+<pre><code>bool sdkStyle = false;
+using (XmlReader reader = XmlReader.Create(projectPath))
+{
+    if (reader.MoveToContent() == XmlNodeType.Element &amp;&amp; reader.HasAttributes)
+    {
+        if (reader.MoveToAttribute(&quot;Sdk&quot;))
+        {
+            sdkStyle = true;
+        }
+    }    
+}
+</code></pre>
+<p>Note that even though we're reading the project as XML to determine if it uses the <code>Sdk</code> attribute, you still need to load it by file name into the MSBuild <code>Project</code> even though the <code>ProjectCollection.LoadProject()</code> method accepts an <code>XmlReader</code>. This is because loading it by file name sets some additional properties that MSBuild requires to properly locate targets files. If you loaded the XML directly, you'd need to identify and set all of those global properties yourself.</p>
+<p>Update: Andreas pointed out in the comments that SDK-style projects <a href="https://github.com/Microsoft/msbuild/issues/1493">can also be specified by directly importing the SDK props and targets</a>. If you want to identify any SDK-style project, you'll also need to scan for those <code>&lt;Import&gt;</code> elements in the project file if a SDK attribute wasn't found on the root project element.</p>
+<h1 id="configuring-a-design-time-build">Configuring A Design-Time Build</h1>
+<p>Now that we can finally open any type of MSBuild project, let's figure out how to execute a <a href="https://github.com/dotnet/project-system/blob/master/docs/design-time-builds.md">design-time build</a>. Recall from the introduction that this special type of build will give us information about the project without actually compiling it. It turns out that triggering a design-time build is really easy compared to getting MSBuild to work. All it takes is a few extra global properties:</p>
+<ul>
+<li><code>DesignTimeBuild</code> triggers the alternate targets for a design-time build.</li>
+<li><code>BuildProjectReferences</code> tells MSBuild to ignore other project references.</li>
+<li><code>SkipCompilerExecution</code> tells MSBuild not to invoke the compiler.</li>
+<li><code>ProvideCommandLineArgs</code> outputs the command line that would have get sent to the compiler, which we can use to extract the final computed source files, references, and build properties.</li>
+</ul>
+<p>For example, you can set these by adding the following after using the code earlier to get the global properties for the type of project:</p>
+<pre><code>// ...
+Dictionary&lt;string, string&gt; globalProperties = GetGlobalProperties(projectPath, toolsPath);
+globalProperties[&quot;DesignTimeBuild&quot;] = &quot;true&quot;;
+globalProperties[&quot;BuildProjectReferences&quot;] = &quot;false&quot;;
+globalProperties[&quot;SkipCompilerExecution&quot;] = &quot;true&quot;;
+globalProperties[&quot;ProvideCommandLineArgs&quot;] = &quot;true&quot;;
+// ...
+</code></pre>
+<h1 id="getting-the-data">Getting The Data</h1>
+<h2 id="compiling-the-project">Compiling The Project</h2>
+<p>So far we've just been configuring a build and telling MSBuild how to evaluate the project file but we actually have to run the build to get our output. You can't run a build directly on the MSBuild <code>Project</code> instance, instead you have to create an independent <code>ProjectInstance</code> object and execute the build on that:</p>
+<pre><code>ProjectInstance projectInstance = project.CreateProjectInstance();
+if (!projectInstance.Build(&quot;Compile&quot;, null))
+{
+    throw new Exception(&quot;Could not compile project&quot;);
+}
+</code></pre>
+<h2 id="but-wait-yes-again">But Wait (Yes, Again)!</h2>
+<p>At this point if you try and run the build, it might succeed. Or it might fail. There are a lot of moving parts involved and it's worth taking a step back and considering what we've actually rigged up here. We're consuming MSBuild APIs we got off of NuGet and telling them to look for support libraries, including the actual MSBuild runtime, on the file system somewhere. Included in the stuff we're probably loading from the file system are other libraries that contain the compiled task code, support functions, etc. And on top of that you're own application may be running on different runtimes such as .NET Framework or .NET Core. This is a recipe for assembly loading nightmares. Here are some tips to make this process more universal. Note that you may need to do all of these things or none of them depending on your application runtime, the target of the project you're trying to compile, and the MSBuild artifacts available in the file system.</p>
+<p>The first this we'll need to do is be sure your host application does not have the &quot;Prefer 32-bit&quot; flag checked. That's because many of the MSBuild artifacts on disk may be compiled for 64-bit (especially those in the .NET Core SDK). This ensures your application will be able to load them.</p>
+<p>We'll also want to make sure we're loading <em>our</em> version of the core tasks library that matches the MSBuild API we've been using and not the version from disk. We've already added the NuGet package (it was one of the ones I listed in the beginning), but we haven't referenced anything in it yet so the .NET runtime won't load it into memory for us. To cause it to load into memory, add the following before calling <code>.Build()</code>:</p>
+<pre><code>// Instantiate a task from the core tasks library
+Copy copy = new Copy();
+</code></pre>
+<p>I also ran into trouble in some situations with finding and loading the Roslyn tasks assembly. I was able to get around this by adding the following:</p>
+<pre><code>Assembly.LoadFile(Path.GetFullPath(Path.Combine(globalProperties[&quot;RoslynTargetsPath&quot;], &quot;Microsoft.Build.Tasks.CodeAnalysis.dll&quot;)));
+</code></pre>
+<p>Finally, I hit some issues with the availability and binding of certain <code>netstandard</code> packages when using the MSBuild APIs from a .NET Framework console application. You may or may not need to add the <a href="https://www.nuget.org/packages/System.IO.FileSystem/">System.IO.FileSystem</a> package and the following binding redirects:</p>
+<pre><code>&lt;dependentAssembly&gt;
+    &lt;assemblyIdentity name=&quot;Microsoft.Build.Framework&quot; publicKeyToken=&quot;b03f5f7f11d50a3a&quot; culture=&quot;neutral&quot; /&gt;
+    &lt;bindingRedirect oldVersion=&quot;0.0.0.0-99.9.9.9&quot; newVersion=&quot;15.1.0.0&quot; /&gt;
+&lt;/dependentAssembly&gt;
+&lt;dependentAssembly&gt;
+    &lt;assemblyIdentity name=&quot;System.IO.FileSystem&quot; publicKeyToken=&quot;b03f5f7f11d50a3a&quot; culture=&quot;neutral&quot; /&gt;
+    &lt;bindingRedirect oldVersion=&quot;0.0.0.0-4.0.3.0&quot; newVersion=&quot;4.0.3.0&quot; /&gt;
+&lt;/dependentAssembly&gt;
+</code></pre>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<p>At this point hopefully you'll be able to build successfully, but if not you may need to attach a logger:</p>
+<pre><code>StringBuilder logBuilder = new StringBuilder();
+ConsoleLogger logger = new ConsoleLogger(LoggerVerbosity.Normal, x =&gt; logBuilder.Append(x), null, null);
+projectCollection.RegisterLogger(logger);
+// ...
+ProjectInstance projectInstance = Project.CreateProjectInstance();
+if (!projectInstance.Build(&quot;Compile&quot;, new ILogger[] { logger }))
+{
+    Console.WriteLine(logBuilder);  // Or however you want to log
+    throw new Exception(&quot;Could not compile project&quot;);
+}
+</code></pre>
+<p>If something goes wrong, the log output should give you some clues.</p>
+<h2 id="getting-the-csccommandlineargs">Getting The CscCommandLineArgs</h2>
+<p>It's been a long process, but we're almost to the part where we can extract the source files, references, and build properties from the <code>CscCommandLineArgs</code> build item. When the build is complete, we'll end up with multiple entries in <code>ProjectInstance.Items</code> with an <code>ItemType</code> of <code>CscCommandLineArgs</code>. Each one represents another argument to the complier, the value of which is stored in the <code>EvaluatedInclude</code> property. Those arguments that don't start with a slash are our source files, relative to the project path. Those that do start with a slash could be references or other properties. For example, all references start with <code>/reference:</code>.</p>
+<pre><code>List&lt;string&gt; sourceFiles = new List&lt;string&gt;();
+List&lt;string&gt; references = new List&lt;string&gt;();
+foreach(ProjectItemInstance commandLineArg in projectInstance.Items.Where(x =&gt; x.ItemType == &quot;CscCommandLineArgs&quot;))
+{
+    if (!commandLineArg.EvaluatedInclude.StartsWith(&quot;/&quot;))
+    {
+        sourceFiles.Add(
+            Path.GetFullPath(
+                Path.Combine(
+                    Path.GetDirectoryName(projectPath),
+                    commandLineArg.EvaluatedInclude)));
+    }
+    else if (commandLineArg.EvaluatedInclude.StartsWith(&quot;/reference:&quot;))
+    {
+        references.Add(commandLineArg.EvaluatedInclude.Substring(11));
+    }
+}
+</code></pre>
+<p>This may raise the question, &quot;why would I want this data?&quot; It's valuable anytime you need to process a project file since the source files and references are really the main concern of MSBuild. Almost everything else in a MSBuild project is just there to get the right answers for these two things. I plan on using them to enhance <a href="https://github.com/daveaglick/Scripty">Scripty</a> and allow it to work within any host project as well as add support for SDK-style projects to <a href="https://wyam.io">Wyam</a> when generating documentation. They could also be used to construct a Roslyn <a href="https://channel9.msdn.com/Blogs/MVP-Windows-Dev/Learn-Roslyn-Now-E08-The-AdHocWorkspace">AdhocWorkspace</a>.</p>
+<h1 id="introducing-buildalyzer">Introducing Buildalyzer</h1>
+<p>If you've made it all the way to the end, congratulations. I hope you learned a lot. And now I'm going to tell you that you actually didn't need to read or understand any of that because I've written a little open source utility library called <a href="https://github.com/daveaglick/Buildalyzer">Buildalyzer</a> (<a href="https://www.nuget.org/packages/Buildalyzer">NuGet package here</a>) that does this exact thing:</p>
+<pre><code>Analyzer analyzer = new Analyzer();
+IReadOnlyList&lt;string&gt; sourceFiles = analyzer.GetProject(&#64;&quot;C:\MyCode\MyProject.csproj&quot;).GetSourceFiles();
+</code></pre>
+<p>The project could probably use a little polish, which I'll add as I go, but it should be usable and working. Let me know if you hit any bugs or it doesn't work for some combination of runtime and project. It works on my machine and has tests for different combinations, but as you can see this is a complex process. Enjoy - pull requests accepted :).</p>
+
+
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'somedave'; // required: replace example with your forum shortname
+    var disqus_identifier = 'running-a-design-time-build-with-msbuild-apis';
+    var disqus_title = 'Running A Design-Time Build With MSBuild APIs';
+    var disqus_url = 'https://daveaglick.com/posts/running-a-design-time-build-with-msbuild-apis';
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+    
+    (function () {
+        var s = document.createElement('script'); s.async = true;
+        s.type = 'text/javascript';
+        s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+        (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- Footer -->  
+  <footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 text-center">
+                <ul class="list-inline text-center">
+                    <li class="list-inline-item">
+                        <a href="https://twitter.com/daveaglick">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    <li class="list-inline-item">
+                        <a href="https://github.com/daveaglick">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                </ul>
+                <div>
+                    <p class="copyright text-muted">
+                        Copyright © 2020 by Dave Glick. All jams and jellies preserved. The opinions expressed herein are my own and do not represent those of my employer or any other third-party views in any way. This work is licensed under a <a href="http://creativecommons.org/licenses/by/4.0/" rel="license">Creative Commons Attribution 4.0 International License</a>.
+                    </p>
+                </div>
+                <ul class="list-inline text-center small">                                
+                        <li class="list-inline-item">
+                        <a href="/feed.rss"><i class="fa fa-rss"></i> RSS Feed</a>
+                        </li>
+                        <li class="list-inline-item">
+                        <a href="/feed.atom"><i class="fa fa-rss"></i> Atom Feed</a>
+                        </li>
+                </ul>
+                <div class="font-weight-bold small">
+                    <a href="https://github.com/daveaglick/daveaglick"><i class="fab fa-github"></i> This Site on GitHub</a>
+                </div>
+                <div class="font-weight-bold small">
+                    <a href="https://statiq.dev">Generated by Statiq</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+  
+  <script type="text/javascript">
+    // Google Analytics
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r; i[r] = i[r] || function () {
+        (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date(); a = s.createElement(o),
+        m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = g; m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+
+    ga('create', 'UA-54470483-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+  
+
+  <!-- Bootstrap core JavaScript -->
+  <script src="/vendor/jquery/jquery.min.js"></script>
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Custom scripts for this template -->
+  <script src="/js/clean-blog.js"></script>
+
+</body>
+
+</html>

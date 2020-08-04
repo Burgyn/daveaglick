@@ -1,0 +1,262 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="The personal blog of Dave Glick">
+
+  <title>Dave Glick - Deploying a Public NuGet.org Package From Scratch</title>
+
+      <link type="application/rss+xml" rel="alternate" href="/feed.rss" />
+      <link type="application/atom+xml" rel="alternate" href="/feed.atom" />
+  
+  <meta name="application-name" />
+  <meta name="msapplication-tooltip" />
+  <meta name="msapplication-starturl" content="/" />
+
+  <meta property="og:title" content="Dave Glick - Deploying a Public NuGet.org Package From Scratch" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://daveaglick.com/posts/deploying-a-public-nuget-package-from-scratch" />
+  
+  <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+  <!-- Bootstrap core CSS -->
+  <link href="/vendor/bootstrap/scss/bootstrap.css" rel="stylesheet">
+
+  <!-- Custom fonts for this template -->
+  <link href="/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+  <link href="/vendor/fontawesome-free/css/brands.min.css" rel="stylesheet" type="text/css">
+  <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css' data-no-mirror>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css' data-no-mirror>
+  
+  <!-- Custom styles for this template -->
+  <link href="/scss/clean-blog.css" rel="stylesheet">
+  
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.19.0/components/prism-core.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.19.0/plugins/autoloader/prism-autoloader.min.js" data-no-mirror></script>
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.0.0/dist/quicklink.umd.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.19.0/themes/prism.css">
+  
+  
+
+
+  
+
+</head>
+
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
+  <div class="container">
+    <a class="navbar-brand" href="/">Dave Glick</a>
+    <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+      Menu
+      <i class="fas fa-bars"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarResponsive">
+      <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="/tags">Tags</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/archive">Archive</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/speaking">Talks</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/projects">Projects</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/about">About</a>
+            </li>
+</ul>
+    </div>
+  </div>
+</nav>
+
+  <!-- Page Header -->
+  <header class="masthead">
+  <div class="overlay"></div>
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="post-heading">
+          <h1>
+            Deploying a Public NuGet.org Package From Scratch
+          </h1>
+            <h2 class="subheading">With Continuous Integration Using GitHub and AppVeyor</h2>
+              <div class="meta">Published on Thursday, September 18, 2014</div>
+                <div class="mt-3">
+                      <a href="/tags/nuget" class="badge badge-light"> NuGet</a>
+                      <a href="/tags/github" class="badge badge-light"> GitHub</a>
+                      <a href="/tags/appveyor" class="badge badge-light"> AppVeyor</a>
+                </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+  <!-- Main Content -->
+  <div class="container"> 
+    <div class="row">
+      <div id="content" class="col-md-12">  
+        <p>As I prepare to release my first NuGet package, I figured I would provide a walkthrough of how I set all this up. While I’ve used NuGet before (and even set up a private feed for internal libraries at my day job using <a href="http://inedo.com/proget">ProGet</a>, which is awesome), I’ve never published a public package to <a href="http://nuget.org">NuGet.org</a>. While there is <a href="http://docs.nuget.org/docs/creating-packages/creating-and-publishing-a-package">ample help available</a>, it can be a little confusing how to rig everything up. I also wanted to enable continuous integration so that every time I committed a change to my library, it would automatically push a new NuGet package.</p>
+<p>The only assumption before we start this walkthrough is that you’ve got a class library that would be suitable for a standard NuGet package. That is, you don’t use any kind of exotic external libraries or require special packaging. I’m not going to discuss more advanced NuGet packages, but there should be ample resources available on the NuGet site to help you adapt this walkthrough if needed.</p>
+<h1>Create a GitHub Account and Repository</h1>
+<p>Most of you will already have an account on GitHub, and you may already have a repository for your library. If you don’t have a GitHub account, <a href="https://github.com/">go ahead and create one</a>. You’ll also need to make a repository for your library by clicking on the “Repositories” tab and then clicking “New”.</p>
+<p><img src="/posts/images/github-new-repo.png" class="img-responsive"></img></p>
+<p>Pushing your code to the repository and general Git usage is mostly outside the scope of this walkthrough. However, <a href="https://help.github.com/">see the GitHub help pages if you need some guidance</a>. You don’t necessarily need to do your first push yet, but you will need to push everything a little later.</p>
+<h1>Create a NuGet Account</h1>
+<p>If you don’t already have one, go ahead and create a new <a href="http://www.nuget.org">NuGet.org</a> account as well. Once you've created an account, you need to get your API key which can be found on your account page.</p>
+<p><img src="/posts/images/nuget-apikey.png" class="img-responsive"></img></p>
+<h1>Create an AppVeyor Account and Project</h1>
+<p>While we’re creating accounts, let’s also create an <a href="http://www.appveyor.com/">AppVeyor</a> account. It’s free for unlimited public repositories, so there’s really nothing to loose. I created an account directly on AppVeyor, but you can also choose to login using your GitHub credentials.</p>
+<p>Once you’re logged in, click on the “Projects” tab and then click “New Project”. This will allow you to link up your GitHub account (or BitBucket, Kiln, etc.) and select the repository that you want to use. Go ahead and select the repository that we created in the first step.</p>
+<h1>Set Up the NuGet Package</h1>
+<p>Now we need to go back to our local system and prepare the NuGet package. NuGet works in two phases. The first step is to create a <code>.nuspec</code> file that contains all of the metadata for your package. Then, each time that you change the library, the <code>.nuspec</code> file gets reused to create the actual NuGet package that can be deployed to users. To create the <code>.nuspec</code> file, open a command prompt with <code>nuget.exe</code> in the path and run <code>nuget spec</code> from the same folder as your project. This will create the <code>.nuspec</code> file and give it the same name as your project file.</p>
+<p>Open the <code>.nuspec</code> file in a text editor. It should look like this:</p>
+<pre class="prettyprint">&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;package &gt;
+  &lt;metadata&gt;
+    &lt;id&gt;$id$&lt;/id&gt;
+    &lt;version&gt;$version$&lt;/version&gt;
+    &lt;title&gt;$title$&lt;/title&gt;
+    &lt;authors&gt;$author$&lt;/authors&gt;
+    &lt;owners&gt;$author$&lt;/owners&gt;
+    &lt;licenseUrl&gt;http://LICENSE_URL_HERE_OR_DELETE_THIS_LINE&lt;/licenseUrl&gt;
+    &lt;projectUrl&gt;http://PROJECT_URL_HERE_OR_DELETE_THIS_LINE&lt;/projectUrl&gt;
+    &lt;iconUrl&gt;http://ICON_URL_HERE_OR_DELETE_THIS_LINE&lt;/iconUrl&gt;
+    &lt;requireLicenseAcceptance&gt;false&lt;/requireLicenseAcceptance&gt;
+    &lt;description&gt;$description$&lt;/description&gt;
+    &lt;releaseNotes&gt;Summary of changes made in this release of the package.&lt;/releaseNotes&gt;
+    &lt;copyright&gt;Copyright 2014&lt;/copyright&gt;
+    &lt;tags&gt;Tag1 Tag2&lt;/tags&gt;
+  &lt;/metadata&gt;
+&lt;/package&gt;</pre>
+<p>Go ahead and add content for all of the elements except <code>version</code>, which should be left as <code>$version$</code>. This takes care of your package specification. Now we need to figure out how to build the actual NuGet package.</p>
+<p>In the past I’ve always created NuGet packages from a project by running <code>nuget pack MyProject.csproj</code> after any changes. However, this process isn’t ideal for a continuous integration environment where the NuGet package file needs to be built by the continuous integration server. Jim Counts has written <a href="http://ihadthisideaonce.com/2014/02/24/nuget-like-a-pro-the-msbuild-way/">some very good instructions on how to add package building to your msbuild process</a>. I initially thought I’d need to do this too, but it turns out that AppVeyor has built-in support for NuGet so you don’t have to worry about messing with your build files (though there may be other reasons why you’d want to do this, such as if you want to also create NuGet packages locally during build).</p>
+<p>To turn this feature on, open up your AppVeyor project and click “Settings”. Then select “Build” and check “Package NuGet projects”. When it is enabled AppVeyor calls <code>nuget pack</code> for every project in the solution that has a <code>.nuspec</code> file in its root and then publishes NuGet package artifacts in both project and account feeds.</p>
+<p><img src="/posts/images/appveyor-nuget-package.png" class="img-responsive"></img></p>
+<p>You'll probably also want to turn on <code>AssemblyInfo</code> patching. This will enable AppVeyor to modify your <code>AssemblyInfo.cs</code> file with an updated version number on each build. Since we told NuGet to use the version number from the assembly as well, this will also automatically update your NuGet package version. To turn on <code>AssemblyInfo</code> patching, go to "Settings" then "General" and the option is near the bottom of the page.</p>
+<p><img src="/posts/images/appveyor-assemblyinfo-patching.png" class="img-responsive"></img></p>
+<h1>Push Your Code to GitHub and Trigger a Build</h1>
+<p>If you haven't yet pushed your code to your GitHub repository, go ahead and do that now. When you commit code to the repository, AppVeyor will automatically kick-off a build. If you already had code in your repository, you can manually trigger a build from the AppVeyor "Latest Build" project page. In both cases, the build will be queued by AppVeyor and may take a minute or two to kick off. Once it does, you'll get an automatically updated console window with the build results on the "Latest Build" page in AppVeyor.</p>
+<p><img src="/posts/images/appveyor-build.png" class="img-responsive"></img></p>
+<p>Once the build is done, you should be able to see your NuGet package in the "Artifacts" tab.</p>
+<p><img src="/posts/images/appveyor-artifacts.png" class="img-responsive"></img></p>
+<h1>Deploying Your NuGet Package</h1>
+<p>The last step is to deploy your NuGet package. This can be set up automatically using AppVeyor, just click "Settings", "Deployment", and then "Add deployment". Select ""NuGet" from the list and add your API key we fetched when setting up your NuGet.org account (you can leave the "NuGet server" and "Artifact(s)" fields empty). This will automatically push your NuGet package to NuGet.org on your next build.</p>
+<p><img src="/posts/images/appveyor-deployment.png" class="img-responsive"></img></p>
+<h1>A Final Word, And More Control</h1>
+<p>That's all it takes for a simple setup. Alternatively, AppVeyor also allows you to place a special file in your repository that it will use to configure everything. This gives you a little more control and also helps correlate your build with a specific revision in the repository. <a href="http://www.codeproject.com/Tips/806257/Automating-NuGet-Package-Creation-using-AppVeyor">Stuart Wheelwright has written a great tutorial on this approach</a>.</p>
+
+
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'somedave'; // required: replace example with your forum shortname
+    var disqus_identifier = 'deploying-a-public-nuget-package-from-scratch';
+    var disqus_title = 'Deploying a Public NuGet.org Package From Scratch';
+    var disqus_url = 'https://daveaglick.com/posts/deploying-a-public-nuget-package-from-scratch';
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+    
+    (function () {
+        var s = document.createElement('script'); s.async = true;
+        s.type = 'text/javascript';
+        s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+        (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- Footer -->  
+  <footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 text-center">
+                <ul class="list-inline text-center">
+                    <li class="list-inline-item">
+                        <a href="https://twitter.com/daveaglick">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    <li class="list-inline-item">
+                        <a href="https://github.com/daveaglick">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                </ul>
+                <div>
+                    <p class="copyright text-muted">
+                        Copyright © 2020 by Dave Glick. All jams and jellies preserved. The opinions expressed herein are my own and do not represent those of my employer or any other third-party views in any way. This work is licensed under a <a href="http://creativecommons.org/licenses/by/4.0/" rel="license">Creative Commons Attribution 4.0 International License</a>.
+                    </p>
+                </div>
+                <ul class="list-inline text-center small">                                
+                        <li class="list-inline-item">
+                        <a href="/feed.rss"><i class="fa fa-rss"></i> RSS Feed</a>
+                        </li>
+                        <li class="list-inline-item">
+                        <a href="/feed.atom"><i class="fa fa-rss"></i> Atom Feed</a>
+                        </li>
+                </ul>
+                <div class="font-weight-bold small">
+                    <a href="https://github.com/daveaglick/daveaglick"><i class="fab fa-github"></i> This Site on GitHub</a>
+                </div>
+                <div class="font-weight-bold small">
+                    <a href="https://statiq.dev">Generated by Statiq</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+  
+  <script type="text/javascript">
+    // Google Analytics
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r; i[r] = i[r] || function () {
+        (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date(); a = s.createElement(o),
+        m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = g; m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+
+    ga('create', 'UA-54470483-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+  
+
+  <!-- Bootstrap core JavaScript -->
+  <script src="/vendor/jquery/jquery.min.js"></script>
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Custom scripts for this template -->
+  <script src="/js/clean-blog.js"></script>
+
+</body>
+
+</html>

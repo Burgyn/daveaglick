@@ -1,0 +1,253 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="Hi! By day, I&#x27;m a .NET and open source enthusiast and a Microsoft Visual Studio and Development Technologies MVP. By night, I&#x27;m a husband and father. Somewhere in between the two I write stuff here.">
+
+  <title>Dave Glick</title>
+
+      <link type="application/rss+xml" rel="alternate" href="/feed.rss" />
+      <link type="application/atom+xml" rel="alternate" href="/feed.atom" />
+  
+  <meta name="application-name" />
+  <meta name="msapplication-tooltip" />
+  <meta name="msapplication-starturl" content="/" />
+
+  <meta property="og:title" content="Dave Glick" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://daveaglick.com/page/13" />
+  
+  <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+  <!-- Bootstrap core CSS -->
+  <link href="/vendor/bootstrap/scss/bootstrap.css" rel="stylesheet">
+
+  <!-- Custom fonts for this template -->
+  <link href="/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+  <link href="/vendor/fontawesome-free/css/brands.min.css" rel="stylesheet" type="text/css">
+  <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css' data-no-mirror>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css' data-no-mirror>
+  
+  <!-- Custom styles for this template -->
+  <link href="/scss/clean-blog.css" rel="stylesheet">
+  
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.19.0/components/prism-core.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.19.0/plugins/autoloader/prism-autoloader.min.js" data-no-mirror></script>
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.0.0/dist/quicklink.umd.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.19.0/themes/prism.css">
+  
+  
+
+
+  
+
+</head>
+
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
+  <div class="container">
+    <a class="navbar-brand" href="/">Dave Glick</a>
+    <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+      Menu
+      <i class="fas fa-bars"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarResponsive">
+      <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="/tags">Tags</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/archive">Archive</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/speaking">Talks</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/projects">Projects</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/about">About</a>
+            </li>
+</ul>
+    </div>
+  </div>
+</nav>
+
+  <!-- Page Header -->
+  <header class="masthead">
+  <div class="overlay"></div>
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="site-heading">
+          <h1>
+            
+              <small>(Page 13)</small>
+          </h1>
+            <h2 class="subheading">Hi! By day, I&#x27;m a .NET and open source enthusiast and a Microsoft Visual Studio and Development Technologies MVP. By night, I&#x27;m a husband and father. Somewhere in between the two I write stuff here.</h2>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+  <!-- Main Content -->
+  <div class="container"> 
+    <div class="row">
+      <div id="content" class="col-md-12">  
+        <div class="container-sm-height">
+    <div class="row row-sm-height">
+        <div class="col-6 right-border col-sm-height">
+            
+
+
+<div class="post-preview">
+    <h2 class="post-title"><a href="/posts/exploring-the-nuget-v3-libraries-part-1">Exploring the NuGet v3 Libraries, Part 1</a></h2>
+        <div class="post-subtitle">Introduction and concepts</div>
+    <p class="post-meta">Published on Wednesday, May 18, 2016</p>                
+<p>The NuGet version 3 libraries have been available for a while, both <a href="https://github.com/NuGet/NuGet.Client">on GitHub</a> and on the <a href="https://www.nuget.org/packages/NuGet.PackageManagement">public NuGet gallery</a>. Despite advice by the NuGet team that they aren't ready for public consumption yet, it's been over six months since the first release of NuGet v3 and many packages are starting to require v3 clients for installation. If you already have an application that uses NuGet libraries, this is, or will shortly become, a problem for your application as more and more packages start only supporting the newer client versions.</p>        <p class="small"><a href="/posts/exploring-the-nuget-v3-libraries-part-1">Read more...</a></p>
+</div>
+
+<div class="post-preview">
+    <h2 class="post-title"><a href="/posts/capturing-standard-input-in-csharp">Capturing Standard Input in C#</a></h2>
+        <div class="post-subtitle">My experience resolving a surprisingly tricky problem</div>
+    <p class="post-meta">Published on Tuesday, May 17, 2016</p>                
+<p>I recently ran across a problem that was surprisingly challenging. I have a console application and I wanted to be able to send it information over standard input. That includes piping data to it such as <code>echo "test" | myapp.exe</code> and receiving command redirection such as <code>myapp.exe &lt; file.txt</code> (<a href="https://www.microsoft.com/resources/documentation/windows/xp/all/proddocs/en-us/redirection.mspx">see this link</a> for more information about Windows command redirection). This sort of input all comes into your application by way of a stream called "standard input" or "stdin" for short. It turns out there's a lot of edge cases to consider when trying to capture standard input, and accounting for them all can be difficult.</p>        <p class="small"><a href="/posts/capturing-standard-input-in-csharp">Read more...</a></p>
+</div>
+
+<div class="post-preview">
+    <h2 class="post-title"><a href="/posts/some-thoughts-on-microdependencies-npm-and-node">Some Thoughts on Microdependencies, NPM, and Node</a></h2>
+        <div class="post-subtitle">What can we learn from left-pad gate?</div>
+    <p class="post-meta">Published on Thursday, March 24, 2016</p>                
+<p>Unless you've been hiding under a rock, you've heard about <a href="http://www.theregister.co.uk/2016/03/23/npm_left_pad_chaos/">the controversy over left-pad</a> in which a Node developer, angry over a trademark dispute, pulled all of his packages from NPM. It turns out that one of these packages, <a href="https://github.com/azer/left-pad">left-pad</a>, was actually a dependency for a bunch of <em>other</em> packages and so builds everywhere came grinding to a halt. Now <a href="http://www.haneycodes.net/npm-left-pad-have-we-forgotten-how-to-program/">everyone</a> <a href="https://developers.slashdot.org/story/16/03/23/0652204/how-one-dev-broke-node-and-thousands-of-projects-in-11-lines-of-javascript">has</a> <a href="https://medium.com/@mproberts/a-discussion-about-the-breaking-of-the-internet-3d4d2a83aa4d#.fqb2motdz">an</a> <a href="https://medium.com/@robbyrussell/d-oh-my-zsh-af99ca54212c#.3lzvqpv3f">opinion</a> on the topic, many of which are very thought-provoking. I figure what the heck, since everyone else is writing about it I might as well too.</p>        <p class="small"><a href="/posts/some-thoughts-on-microdependencies-npm-and-node">Read more...</a></p>
+</div>
+    <div>
+        <div class="float-sm-left">
+                <a class="btn btn-primary" href="/page/12" role="button">Newer <i class="fas fa-angle-double-left"></i></a>
+        </div>
+        <div class="float-sm-right">
+                <a class="btn btn-primary" href="/page/14" role="button">Older <i class="fas fa-angle-double-right"></i></a>
+        </div>
+        <div class="clearfix"></div>
+    </div>
+
+        </div>
+        <div class="col-4 col-sm-height">
+                    <div>
+                        <h5>Tags</h5>
+                            <a href="/tags/open-source" class="badge badge-light"> open source (18)</a>
+                            <a href="/tags/asp.net" class="badge badge-light"> ASP.NET (15)</a>
+                            <a href="/tags/asp.net-mvc" class="badge badge-light"> ASP.NET MVC (14)</a>
+                            <a href="/tags/static-site-generator" class="badge badge-light"> static site generator (9)</a>
+                            <a href="/tags/programming" class="badge badge-light"> programming (8)</a>
+                            <a href="/tags/azure" class="badge badge-light"> Azure (7)</a>
+                            <a href="/tags/wyam" class="badge badge-light"> Wyam (7)</a>
+                            <a href="/tags/roslyn" class="badge badge-light"> Roslyn (7)</a>
+                            <a href="/tags/nuget" class="badge badge-light"> NuGet (6)</a>
+                            <a href="/tags/devops" class="badge badge-light"> devops (5)</a>
+                        <div class="mt-3">
+                            <div class="float-sm-right">
+                                <a class="btn btn-sm btn-primary" href="/tags" role="button">All Tags <i class="fas fa-angle-double-right"></i></a>
+                            </div>
+                            <div class="clearfix"></div>
+                        </div>
+                    </div>
+            
+            <hr />
+<h5>On The Interwebs</h5>
+
+<ul class="list-unstyled">
+    <li><a href="https://twitter.com/daveaglick"><i class="fab fa-twitter"></i> Twitter <small>(daveaglick)</small></a></li>
+    <li><a href="https://github.com/daveaglick"><i class="fab fa-github"></i> GitHub <small>(daveaglick)</small></a></li>
+    <li><a href="https://keybase.io/daveaglick"><i class="fab fa-keybase"></i> Keybase <small>(daveaglick)</small></a></li>
+    <li><a href="http://stackoverflow.com/users/807064/daveaglick"><i class="fab fa-stack-overflow"></i> Stack Overflow <small>(daveaglick)</small></a></li>
+    <li><a href="http://www.linkedin.com/pub/dave-glick/a/871/424/"><i class="fab fa-linkedin"></i> LinkedIn</a></li>
+    <li><a href="http://www.goodreads.com/daveaglick"><i class="fab fa-goodreads"></i> Goodreads <small>(daveaglick)</small></a></li>
+</ul>
+        </div>
+    </div>
+</div>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- Footer -->  
+  <footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 text-center">
+                <ul class="list-inline text-center">
+                    <li class="list-inline-item">
+                        <a href="https://twitter.com/daveaglick">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    <li class="list-inline-item">
+                        <a href="https://github.com/daveaglick">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                </ul>
+                <div>
+                    <p class="copyright text-muted">
+                        Copyright © 2020 by Dave Glick. All jams and jellies preserved. The opinions expressed herein are my own and do not represent those of my employer or any other third-party views in any way. This work is licensed under a <a href="http://creativecommons.org/licenses/by/4.0/" rel="license">Creative Commons Attribution 4.0 International License</a>.
+                    </p>
+                </div>
+                <ul class="list-inline text-center small">                                
+                        <li class="list-inline-item">
+                        <a href="/feed.rss"><i class="fa fa-rss"></i> RSS Feed</a>
+                        </li>
+                        <li class="list-inline-item">
+                        <a href="/feed.atom"><i class="fa fa-rss"></i> Atom Feed</a>
+                        </li>
+                </ul>
+                <div class="font-weight-bold small">
+                    <a href="https://github.com/daveaglick/daveaglick"><i class="fab fa-github"></i> This Site on GitHub</a>
+                </div>
+                <div class="font-weight-bold small">
+                    <a href="https://statiq.dev">Generated by Statiq</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+  
+  <script type="text/javascript">
+    // Google Analytics
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r; i[r] = i[r] || function () {
+        (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date(); a = s.createElement(o),
+        m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = g; m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+
+    ga('create', 'UA-54470483-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+  
+
+  <!-- Bootstrap core JavaScript -->
+  <script src="/vendor/jquery/jquery.min.js"></script>
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Custom scripts for this template -->
+  <script src="/js/clean-blog.js"></script>
+
+</body>
+
+</html>

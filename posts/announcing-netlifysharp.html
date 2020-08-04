@@ -1,0 +1,249 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="The personal blog of Dave Glick">
+
+  <title>Dave Glick - Announcing NetlifySharp</title>
+
+      <link type="application/rss+xml" rel="alternate" href="/feed.rss" />
+      <link type="application/atom+xml" rel="alternate" href="/feed.atom" />
+  
+  <meta name="application-name" />
+  <meta name="msapplication-tooltip" />
+  <meta name="msapplication-starturl" content="/" />
+
+  <meta property="og:title" content="Dave Glick - Announcing NetlifySharp" />
+    <meta property="og:image" content="/images/plasma.jpg" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://daveaglick.com/posts/announcing-netlifysharp" />
+  
+  <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+  <!-- Bootstrap core CSS -->
+  <link href="/vendor/bootstrap/scss/bootstrap.css" rel="stylesheet">
+
+  <!-- Custom fonts for this template -->
+  <link href="/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+  <link href="/vendor/fontawesome-free/css/brands.min.css" rel="stylesheet" type="text/css">
+  <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css' data-no-mirror>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css' data-no-mirror>
+  
+  <!-- Custom styles for this template -->
+  <link href="/scss/clean-blog.css" rel="stylesheet">
+  
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.19.0/components/prism-core.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.19.0/plugins/autoloader/prism-autoloader.min.js" data-no-mirror></script>
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.0.0/dist/quicklink.umd.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.19.0/themes/prism.css">
+  
+  
+
+
+  
+
+</head>
+
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
+  <div class="container">
+    <a class="navbar-brand" href="/">Dave Glick</a>
+    <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+      Menu
+      <i class="fas fa-bars"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarResponsive">
+      <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="/tags">Tags</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/archive">Archive</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/speaking">Talks</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/projects">Projects</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/about">About</a>
+            </li>
+</ul>
+    </div>
+  </div>
+</nav>
+
+  <!-- Page Header -->
+  <header class="masthead" style="background-image: url(&quot;/images/plasma.jpg&quot;)">
+  <div class="overlay"></div>
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="post-heading">
+          <h1>
+            Announcing NetlifySharp
+          </h1>
+            <h2 class="subheading">A .NET API client for Netlify.</h2>
+              <div class="meta">Published on Thursday, December 7, 2017</div>
+                <div class="mt-3">
+                      <a href="/tags/static-site-generator" class="badge badge-light"> static site generator</a>
+                      <a href="/tags/netlify" class="badge badge-light"> Netlify</a>
+                      <a href="/tags/open-source" class="badge badge-light"> open source</a>
+                </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+  <!-- Main Content -->
+  <div class="container"> 
+    <div class="row">
+      <div id="content" class="col-md-12">  
+        <p><a href="https://www.netlify.com/">Netlify</a> is an awesome static site host with tons of developer-friendly features including a <a href="https://www.netlify.com/docs/api/">comprehensive API</a>. Today I'm announcing <a href="https://netlifysharp.netlify.com/">NetlifySharp</a>, a new .NET API client for that API that lets you control your Netlify sites from .NET.</p>
+<p>Building NetlifySharp was a fun experience for me. I've written plenty of REST client code, but I've never written a .NET client for a REST API that's designed to be consumed by other developers. Questions like &quot;how can I allow customization?&quot; were interesting to ponder. In the end I think I struck a pretty good balance between exposing an easy to use API while allowing more control if desired.</p>
+<p>One aspect of this project that was mostly new to me is Open API. I was familiar with the concept but hadn't gone much beyond that. Since Netlify publishes an <a href="https://open-api.netlify.com/">Open API specification</a> it was the perfect opportunity to learn. I ended up doing more than that though - as I got tired of writing model code for the API request and response bodies, I ended up using <a href="https://github.com/daveaglick/Scripty">Scripty</a> to write a lightweight Open API parser to generate the model definitions for me from the specification. It's certainly not general enough to release as an all-purpose Open API client generator (we already have <a href="https://github.com/RSuter/NSwag">NSwag</a> and <a href="https://github.com/Azure/autorest">AutoRest</a> for that) it served my purposes quite well.</p>
+<p>Regarding <a href="https://github.com/RSuter/NSwag">NSwag</a> and <a href="https://github.com/Azure/autorest">AutoRest</a>, I looked at both to see if they would fit my needs. Why spend time writing a client API when you can issue a few commands and generate one? Unfortunatly, neither really felt natural to me. I'm sure the clients would have worked fine but they were lacking that personal touch that comes from a bespoke artisinal API.</p>
+<h1 id="usage">Usage</h1>
+<p>All operations are performed through a <code>NetlifyClient</code> instance. Use <a href="https://app.netlify.com/account/applications">a personal access token</a> to create the client:</p>
+<pre><code>NetlifyClient client = new NetlifyClient(&quot;123456789abcdef&quot;);
+</code></pre>
+<p>The <code>NetlifyClient</code> contains methods for each of the endpoints. All endpoints are asynchronous and use a fluent interface. You must call <code>.SendAsync()</code> to initiate communication with the Netlify API.</p>
+<p>For example, to get a list of all configured sites for the account:</p>
+<pre><code>IEnumerable&lt;Site&gt; sites = await client.ListSites().SendAsync();
+</code></pre>
+<p>To create a new site:</p>
+<pre><code>Site site = await client
+    .CreateSite(
+        new SiteSetup(client)
+        {
+            Name = &quot;mynewsite&quot;
+        })
+    .SendAsync();
+</code></pre>
+<p>You'll notice that the <code>NetlifyClient</code> instance was required in the <code>SiteSetup</code> constructor in the above example. All models require the client to be provided when directly instantiating them. If they're created as a result of an API call (like the sites in the first example) then the client is already set. This is so every model can initiate their own API requests through the client.</p>
+<p>For example, to delete an existing site:</p>
+<pre><code>Site deleteme = await client.GetSite(&quot;sitetodelete.netlify.com&quot;).SendAsync();
+await deleteme.DeleteSite().SendAsync();
+</code></pre>
+<p>More information is available <a href="https://netlifysharp.netlify.com">in the docs</a>.</p>
+<h1 id="current-status">Current Status</h1>
+<p>Right now only the sites endpoints are implemented. That means you can query for sites, create and delete site, upload deployments, and perform other site operations. The other endpoints will be coming soon.</p>
+<h1 id="but-why">But, Why?</h1>
+<iframe src="https://giphy.com/embed/1M9fmo1WAFVK0" width="480" height="270" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/why-ryan-reynolds-1M9fmo1WAFVK0">via GIPHY</a></p>
+<p>So a legitimate question you may have at this point is why build something like this at all? If there's a REST API and a CLI, why do we even need a .NET client? The answer is automation. The Netlify API offers a lot of interesting functionality like creating and deleting sites on the fly, reading form submissions, deploying new versions, etc. By using NetlifySharp we can add these capabilities to a <a href="https://wyam.io">static site generator</a> or <a href="https://cakebuild.net">build automation tool</a>.</p>
+<p>For example, the use case I currently have in mind (and the reason I wrote this now) is to create new Netlify sites on demand as part of a complex documentation generation process that publishes documentation for different versions of a library. As the documentation generation process is fully automated, it can check if a site for a given version already exists and if it doesn't we can generate the documentation, create the Netlify site to host it, and deploy it all from a build script.</p>
+<p>Another interesting use case I'm considering is using the <a href="https://www.netlify.com/docs/form-handling/">Netlify form handling</a> capabilities to replace the commenting system on my static blog. The static generation process could use NetlifySharp to query for form submissions and generate comments from them.</p>
+<p>If you end up doing something cool with NetlifySharp, let me know!</p>
+
+
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'somedave'; // required: replace example with your forum shortname
+    var disqus_identifier = 'announcing-netlifysharp';
+    var disqus_title = 'Announcing NetlifySharp';
+    var disqus_url = 'https://daveaglick.com/posts/announcing-netlifysharp';
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+    
+    (function () {
+        var s = document.createElement('script'); s.async = true;
+        s.type = 'text/javascript';
+        s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+        (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- Footer -->  
+  <footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 text-center">
+                <ul class="list-inline text-center">
+                    <li class="list-inline-item">
+                        <a href="https://twitter.com/daveaglick">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    <li class="list-inline-item">
+                        <a href="https://github.com/daveaglick">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                </ul>
+                <div>
+                    <p class="copyright text-muted">
+                        Copyright © 2020 by Dave Glick. All jams and jellies preserved. The opinions expressed herein are my own and do not represent those of my employer or any other third-party views in any way. This work is licensed under a <a href="http://creativecommons.org/licenses/by/4.0/" rel="license">Creative Commons Attribution 4.0 International License</a>.
+                    </p>
+                </div>
+                <ul class="list-inline text-center small">                                
+                        <li class="list-inline-item">
+                        <a href="/feed.rss"><i class="fa fa-rss"></i> RSS Feed</a>
+                        </li>
+                        <li class="list-inline-item">
+                        <a href="/feed.atom"><i class="fa fa-rss"></i> Atom Feed</a>
+                        </li>
+                </ul>
+                <div class="font-weight-bold small">
+                    <a href="https://github.com/daveaglick/daveaglick"><i class="fab fa-github"></i> This Site on GitHub</a>
+                </div>
+                <div class="font-weight-bold small">
+                    <a href="https://statiq.dev">Generated by Statiq</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+  
+  <script type="text/javascript">
+    // Google Analytics
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r; i[r] = i[r] || function () {
+        (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date(); a = s.createElement(o),
+        m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = g; m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+
+    ga('create', 'UA-54470483-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+  
+
+  <!-- Bootstrap core JavaScript -->
+  <script src="/vendor/jquery/jquery.min.js"></script>
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Custom scripts for this template -->
+  <script src="/js/clean-blog.js"></script>
+
+</body>
+
+</html>

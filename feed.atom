@@ -4,7 +4,7 @@
 	<title />
 	<link rel="self" href="https://daveaglick.com/" />
 	<rights>2020</rights>
-	<updated>2020-08-04T02:22:32Z</updated>
+	<updated>2020-08-04T19:10:52Z</updated>
 	<subtitle>The personal blog of Dave Glick</subtitle>
 	<entry>
 		<id>https://daveaglick.com/posts/default-interface-members-what-are-they-good-for</id>
@@ -397,7 +397,7 @@ public class Avalon : Toyota
 		<content>&lt;p&gt;In today's episode of "what crazy niche has Dave gotten sucked into this time?" I announce a new test logger for the Visual Studio Test Platform designed to publish your test results in real-time to Azure Pipelines. This means that you can run &lt;code&gt;dotnet test&lt;/code&gt; from your build script on Azure Pipelines and feed your test results directly to the test summary for your build without having to rely on post-processing like the &lt;code&gt;PublishTestResults&lt;/code&gt; Azure Pipelines task.&lt;/p&gt;
 &lt;p&gt;Before we get to publishing results to Azure Pipelines, let's back up a step and briefly consider what a Visual Studio Test Platform test logger actually is. &lt;a href="https://github.com/Microsoft/vstest-docs/blob/master/docs/report.md"&gt;According to the official docs&lt;/a&gt;, "A test logger is a test platform extension to control reporting of test results.". That's not particularly helpful. What it really means is that you can write a library to hook into what's happening with your test run and do something with that information. The API for this isn't great or well documented, basically a single interface with a few event handlers, but it's enough to get details about each test run.&lt;/p&gt;
 &lt;p&gt;The AzurePipelines.TestLogger then registers handlers for these test events, builds a heirarchy from the test and source (I.e., file) names, and publishes that to Azure Pipelines while your tests are running using the &lt;a href="https://docs.microsoft.com/en-us/rest/api/azure/devops/?view=azure-devops-rest-5.0"&gt;Azure DevOps REST API&lt;/a&gt;. There were some tricky parts such as figuring out which version of the API to specify for which endpoint (each endpoint is versioned a little differently, particularly with preview versions). Getting some of the Azure Pipelines-specific data like nested test results and parent test durations to work was also a challenge. Now that I've worked through everything, I rather like the result:&lt;/p&gt;
-&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/test-summary.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/test-summary.png" class="img-fluid"&gt;&lt;/p&gt;
 &lt;p&gt;Each test "run" is shown at the root of the result tree (a run is the combination of test assembly and build job/agent). Then each test fixture or class is shown at the second level with it's fully qualified name (minus the root namespace). Nested classes are shown with &lt;code&gt;+&lt;/code&gt; notation. Then individual tests are displayed at the third level. This three-deep heirarchy keeps very large test runs nice and tidy. On the downside, the Azure Pipelines test summary will only show statistics for top-level tests. That's not ideal for a logger that nests results like this one, but the clarity of grouping tests under their fixture is more valuable than listing a correct total in the test summary in my opinion. Thankfully the pass/fail will still "bubble up" so even though the summary may show fewer tests than actually exist, it'll still correctly indicate if any tests are failing (which would then require a drill-down to figure out which ones are failing). &lt;a href="https://developercommunity.visualstudio.com/content/idea/409015/show-all-tests-in-the-hierarchy-in-test-summary.html"&gt;There's an open feature suggestion here for showing all nested tests in the summary&lt;/a&gt;.&lt;/p&gt;
 &lt;p&gt;If you're using .NET and Azure Pipelines and you need this in your life, &lt;a href="https://github.com/daveaglick/AzurePipelines.TestLogger"&gt;head on over to the GitHub repository&lt;/a&gt; for installation and usage instructions. Happy testing.&lt;/p&gt;
 </content>
@@ -429,60 +429,60 @@ public class Avalon : Toyota
 &lt;h1 id="the-setup"&gt;The Setup&lt;/h1&gt;
 &lt;h2 id="create-your-container"&gt;Create Your Container&lt;/h2&gt;
 &lt;p&gt;The first step is to create your container on Codeanywhere. To do so, create an account, &lt;a href="https://codeanywhere.com/dashboard"&gt;open your dashboard&lt;/a&gt;, and create a new project (you might be prompted to create your first project automatically when you create your account as well). When you open your new project you'll be prompted to add a new container:&lt;/p&gt;
-&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-new-container.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-new-container.png" class="img-fluid"&gt;&lt;/p&gt;
 &lt;p&gt;Select the Ubuntu .NET Core image (or Centos if that's your thing) and then select "Create". That's all you need to do and your new container will spin up in the background.&lt;/p&gt;
 &lt;p&gt;Once it's online you can connect to it within the app using SSH:&lt;/p&gt;
-&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-container-ssh.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-container-ssh.png" class="img-fluid"&gt;&lt;/p&gt;
 &lt;p&gt;...and check the .NET Core version:&lt;/p&gt;
-&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-dotnet-version.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-dotnet-version.png" class="img-fluid"&gt;&lt;/p&gt;
 &lt;h2 id="clone-into-working-copy"&gt;Clone Into Working Copy&lt;/h2&gt;
 &lt;p&gt;The next step is to clone the repository we want to work on into Working Copy. You can use Working Copy's &lt;a href="https://workingcopyapp.com/manual/hosting-provider"&gt;hosting provider integration&lt;/a&gt; or just clone straight from the repository URL:&lt;/p&gt;
-&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-clone.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-clone.png" class="img-fluid"&gt;&lt;/p&gt;
 &lt;p&gt;I'll use my project &lt;a href="https://github.com/daveaglick/MsBuildPipeLogger"&gt;MsBuildPipeLogger&lt;/a&gt; as an example for the rest of this post.&lt;/p&gt;
 &lt;h2 id="get-ssh-information-from-container"&gt;Get SSH Information From Container&lt;/h2&gt;
 &lt;p&gt;Now we're going to configure Working Copy to upload and synchronize changes to our container.&lt;/p&gt;
 &lt;p&gt;The first step is to figure out our SSH host. Click on the container actions button and then select "Info":&lt;/p&gt;
-&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-container-actions.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-container-actions.png" class="img-fluid"&gt;&lt;/p&gt;
 &lt;p&gt;From the info screen, look for the hostname and port and note it down:&lt;/p&gt;
-&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-container-info.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-container-info.png" class="img-fluid"&gt;&lt;/p&gt;
 &lt;p&gt;Next we're going to get the private SSH key from our container. This is stored at &lt;code&gt;/home/cabox/.ssh/id_rsa&lt;/code&gt; (note also that the default user is &lt;code&gt;cabox&lt;/code&gt;). The easiest way to get it's contents is to copy it to your root with the command &lt;code&gt;cp /home/cabox/.ssh/id_rsa&lt;/code&gt;. Open a terminal and type that in:&lt;/p&gt;
-&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-copy-key.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-copy-key.png" class="img-fluid"&gt;&lt;/p&gt;
 &lt;p&gt;Then open that file directly from the Codeanywhere container file browser and copy it's contents to the clipboard:&lt;/p&gt;
-&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-copy-key-2.png" class="img-responsive"&gt;&lt;/p&gt;
-&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-copy-key-3.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-copy-key-2.png" class="img-fluid"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-copy-key-3.png" class="img-fluid"&gt;&lt;/p&gt;
 &lt;p&gt;Note that the Codeanywhere file editor can be a little finicky and you might have to try to get the whole file contents within the text selector a couple times before you get everything. The goal is to get your private key onto the iOS clipboard where Working Copy can get to it.&lt;/p&gt;
 &lt;h2 id="configure-working-copy-for-ssh-upload"&gt;Configure Working Copy for SSH Upload&lt;/h2&gt;
 &lt;p&gt;Now we're going to move over to Working Copy and add our SSH key. Open the settings from the upper-right gear icon and then select "SSH Keys":&lt;/p&gt;
-&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-ssh-keys.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-ssh-keys.png" class="img-fluid"&gt;&lt;/p&gt;
 &lt;p&gt;Then add the SSH key we copied from Codeanywhere by clicking the + icon in the upper-right and selecting "Import from Clipboard":&lt;/p&gt;
-&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-import-ssh.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-import-ssh.png" class="img-fluid"&gt;&lt;/p&gt;
 &lt;p&gt;Once you're done you should see the new key in the list of keys.&lt;/p&gt;
 &lt;p&gt;Now we'll add SSH Upload support to the repository we cloned. This will make Working Copy synchronize all changes within the app to the remote container. To add SSH support, open the repository and then click on the repository "Status and Configuration":&lt;/p&gt;
-&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-repo-config.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-repo-config.png" class="img-fluid"&gt;&lt;/p&gt;
 &lt;p&gt;Then click the iOS action button in the upper-right corner and select "SSH Upload" from the list of actions:&lt;/p&gt;
-&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-repo-actions.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-repo-actions.png" class="img-fluid"&gt;&lt;/p&gt;
 &lt;p&gt;Once you add the SSH host and port, Working Copy will ask if you want to accept the server key and then ask you to authenticate. Use &lt;code&gt;cabox&lt;/code&gt; as the username and leave the password blank to use the SSH key you just added to Working Copy.&lt;/p&gt;
 &lt;p&gt;Once that's done, we'll select the remote folder we want to synchronize to. Select the folder icon next to "Remote" to open the folder selection:&lt;/p&gt;
-&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-ssh-folder.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-ssh-folder.png" class="img-fluid"&gt;&lt;/p&gt;
 &lt;p&gt;Then select "workspace" and add a new subfolder for our files:&lt;/p&gt;
-&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-ssh-new-folder.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-ssh-new-folder.png" class="img-fluid"&gt;&lt;/p&gt;
 &lt;p&gt;When you're all ready, select the "Upload" button to initiate the synchronization:&lt;/p&gt;
-&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-upload.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-upload.png" class="img-fluid"&gt;&lt;/p&gt;
 &lt;h2 id="edit-files"&gt;Edit Files&lt;/h2&gt;
 &lt;p&gt;Now let's switch gears a little bit and edit one of our files like the readme. Open the Textastic app, select "Open..." and then select Working Copy as the location to open files from:&lt;/p&gt;
-&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-open-folder.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-open-folder.png" class="img-fluid"&gt;&lt;/p&gt;
 &lt;p&gt;That will show folders for each of the repositories in Working Copy. Select "Select" from the top menu, highlight the repository folder you want to open, and then select "Open" from the top menu:&lt;/p&gt;
-&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-select-folder.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-select-folder.png" class="img-fluid"&gt;&lt;/p&gt;
 &lt;p&gt;That will add the folder to Textastic and allow you to open and edit files in it:&lt;/p&gt;
-&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-edit-file.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-edit-file.png" class="img-fluid"&gt;&lt;/p&gt;
 &lt;h2 id="synchronize-changes"&gt;Synchronize Changes&lt;/h2&gt;
 &lt;p&gt;After you've edited some files, switch back to Working Copy. You'll probaby get a message about no longer being able to upload in the background. That's okay, just open the SSH settings from the terminal icon in the upper-right corner (if they're not already open), and select "Upload" to initiate the synchronization.&lt;/p&gt;
 &lt;p&gt;Now that the files are saved into Working Copy from Textastic, you can also initiate git commands such as committing your changes before or after you work with the files from your container.&lt;/p&gt;
 &lt;h2 id="open-terminal-to-run-a-build"&gt;Open Terminal To Run A Build&lt;/h2&gt;
 &lt;p&gt;The last thing we'll do is switch back to Codeanywhere to open a terminal and run a build with our newly changed files. Open the SSH terminal for your container from within Codeanywhere and the folder you created from Working Copy should now be there:&lt;/p&gt;
-&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-sync-folder.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-sync-folder.png" class="img-fluid"&gt;&lt;/p&gt;
 &lt;p&gt;As with any bash prompt, you can open the folder and run a build:&lt;/p&gt;
-&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-build.png" class="img-responsive"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://daveaglick.com/posts/images/code-from-your-phone-build.png" class="img-fluid"&gt;&lt;/p&gt;
 &lt;h1 id="alternate-setups"&gt;Alternate Setups&lt;/h1&gt;
 &lt;p&gt;What I've described is only one way you could use these tools. Some alternatives include:&lt;/p&gt;
 &lt;ul&gt;
@@ -904,7 +904,7 @@ public class TargetLogger : Logger
 		<content>&lt;p&gt;&lt;a href="https://github.com/aspnet/Blazor"&gt;Blazor&lt;/a&gt; is an exciting new web framework from the ASP.NET team that uses &lt;a href="https://github.com/aspnet/Razor"&gt;Razor&lt;/a&gt;, &lt;a href="http://webassembly.org/"&gt;WebAssembly&lt;/a&gt;, and Mono to enable the use of .NET on the client. There’s been a lot of excitement about the possibilities this presents, but there’s also been just as much confusion about how these various parts fit together. In this post I’ll attempt to clarify things and show you exactly what each of these technologies do and how they work together to enable .NET in your browser.&lt;/p&gt;
 &lt;h1 id="how-javascript-works"&gt;How JavaScript Works&lt;/h1&gt;
 &lt;p&gt;Before we start examining some of the more recent pieces of this puzzle, it’ll help to take a step back and look at what happens inside your browser when it loads and evaluates JavaScript code:&lt;/p&gt;
-&lt;img src="/posts/images/js.png" class="img-responsive" style="margin-top: 6px; margin-bottom: 6px;"&gt;
+&lt;img src="/posts/images/js.png" class="img-fluid" style="margin-top: 6px; margin-bottom: 6px;"&gt;
 &lt;p&gt;Inside every browser is a &lt;em&gt;JavaScript runtime&lt;/em&gt; (or &lt;em&gt;engine&lt;/em&gt;) that's responsible for turning your JavaScript into something that can be evaluated. It's often referred to as a &lt;em&gt;virtual machine&lt;/em&gt; since it presents a well-defined boundary in which the code is evaluated and isolates that evaluation to a specific sandboxed environment. This diagram is a gross oversimplification of modern JavaScript engines, but they all generally consist of three stages:&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;strong&gt;Parser&lt;/strong&gt; - Performs &lt;a href="https://en.wikipedia.org/wiki/Lexical_analysis"&gt;lexical analysis &lt;/a&gt; on the JavaScript code and converts it into tokens (small strings with specific meaning). The tokens are then reassembled into a syntax tree that gets used in the next step.&lt;/li&gt;
@@ -918,7 +918,7 @@ public class TargetLogger : Logger
 &lt;p&gt;&amp;quot;WebAssembly (abbreviated Wasm) is a binary instruction format for a stack-based virtual machine”&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;p&gt;That’s not particularly helpful since it’s intentionally abstract to allow for future implementation changes. What’s important for our purposes is to understand how WebAssembly interacts with the existing JavaScript support that’s already in your browser. Here’s that chart again with the addition of WebAssembly bits:&lt;/p&gt;
-&lt;img src="/posts/images/webassembly.png" class="img-responsive" style="margin-top: 6px; margin-bottom: 6px;"&gt;
+&lt;img src="/posts/images/webassembly.png" class="img-fluid" style="margin-top: 6px; margin-bottom: 6px;"&gt;
 &lt;p&gt;The thing to notice here is that the WebAssembly code is fed directly into the JIT compiler of the JavaScript runtime. That's because &lt;a href="http://webassembly.org/docs/modules/"&gt;WebAssembly modules&lt;/a&gt; have already been compiled into a form of JavaScript bytecode that modern WebAssembly-supporting JavaScript engines can evaluate in their JIT component. The takeaway here is that WebAssembly is &lt;em&gt;related&lt;/em&gt; to JavaScript as it pertains to runtime evaluation, but isn't itself JavaScript. This is a common misconception. WebAssembly is not a transpiler like TypeScript, CoffeeScript, etc.&lt;/p&gt;
 &lt;h1 id="mono"&gt;Mono&lt;/h1&gt;
 &lt;p&gt;Recall that I mentioned Mono at the beginning of this post. It’s arguably the most important part of the .NET-in-the-browser story but it’s probably also the least understood.&lt;/p&gt;
@@ -931,7 +931,7 @@ public class TargetLogger : Logger
 &lt;p&gt;It's also important to note that this is a full .NET runtime that evaluates .NET assemblies. Unlike the WebAssembly support that compiled languages like C++ and Rust are exploring where the application itself is compiled to WebAssembly, the Mono bits are the only thing that needs to be compiled to WebAssembly. Your own .NET assembly will &amp;quot;just work&amp;quot; when it's loaded and interpreted by the Mono runtime. All that said, the Mono team is also exploring a precompilation scenario for enhanced performance. In that mode, you would essentially compile your .NET code along with the Mono runtime directly into WebAssembly bytecode.&lt;/p&gt;
 &lt;h1 id="blazor"&gt;Blazor&lt;/h1&gt;
 &lt;p&gt;All of this sets up the exciting work going on in Blazor itself. Blazor is the name of a project that includes both a runtime component and various tooling. The tooling helps produce the assemblies that the runtime bits know how to work with. What gets delivered to your browser looks like this:&lt;/p&gt;
-&lt;img src="/posts/images/blazor.png" class="img-responsive" style="margin-top: 6px; margin-bottom: 6px;"&gt;
+&lt;img src="/posts/images/blazor.png" class="img-fluid" style="margin-top: 6px; margin-bottom: 6px;"&gt;
 &lt;p&gt;There's a lot going on here so let's examine each part:&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;strong&gt;Blazor Page&lt;/strong&gt; - The HTML file that Blazor produces is really simple. It basically just includes CSS files and headers as well as a couple JavaScript files to help bootstrap the WebAssembly support (WebAssembly modules currently have to be loaded by JavaScript).&lt;/li&gt;

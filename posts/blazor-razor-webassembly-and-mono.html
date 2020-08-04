@@ -110,7 +110,7 @@
         <p><a href="https://github.com/aspnet/Blazor">Blazor</a> is an exciting new web framework from the ASP.NET team that uses <a href="https://github.com/aspnet/Razor">Razor</a>, <a href="http://webassembly.org/">WebAssembly</a>, and Mono to enable the use of .NET on the client. There’s been a lot of excitement about the possibilities this presents, but there’s also been just as much confusion about how these various parts fit together. In this post I’ll attempt to clarify things and show you exactly what each of these technologies do and how they work together to enable .NET in your browser.</p>
 <h1 id="how-javascript-works">How JavaScript Works</h1>
 <p>Before we start examining some of the more recent pieces of this puzzle, it’ll help to take a step back and look at what happens inside your browser when it loads and evaluates JavaScript code:</p>
-<img src="/posts/images/js.png" class="img-responsive" style="margin-top: 6px; margin-bottom: 6px;">
+<img src="/posts/images/js.png" class="img-fluid" style="margin-top: 6px; margin-bottom: 6px;">
 <p>Inside every browser is a <em>JavaScript runtime</em> (or <em>engine</em>) that's responsible for turning your JavaScript into something that can be evaluated. It's often referred to as a <em>virtual machine</em> since it presents a well-defined boundary in which the code is evaluated and isolates that evaluation to a specific sandboxed environment. This diagram is a gross oversimplification of modern JavaScript engines, but they all generally consist of three stages:</p>
 <ul>
 <li><strong>Parser</strong> - Performs <a href="https://en.wikipedia.org/wiki/Lexical_analysis">lexical analysis </a> on the JavaScript code and converts it into tokens (small strings with specific meaning). The tokens are then reassembled into a syntax tree that gets used in the next step.</li>
@@ -124,7 +124,7 @@
 <p>&quot;WebAssembly (abbreviated Wasm) is a binary instruction format for a stack-based virtual machine”</p>
 </blockquote>
 <p>That’s not particularly helpful since it’s intentionally abstract to allow for future implementation changes. What’s important for our purposes is to understand how WebAssembly interacts with the existing JavaScript support that’s already in your browser. Here’s that chart again with the addition of WebAssembly bits:</p>
-<img src="/posts/images/webassembly.png" class="img-responsive" style="margin-top: 6px; margin-bottom: 6px;">
+<img src="/posts/images/webassembly.png" class="img-fluid" style="margin-top: 6px; margin-bottom: 6px;">
 <p>The thing to notice here is that the WebAssembly code is fed directly into the JIT compiler of the JavaScript runtime. That's because <a href="http://webassembly.org/docs/modules/">WebAssembly modules</a> have already been compiled into a form of JavaScript bytecode that modern WebAssembly-supporting JavaScript engines can evaluate in their JIT component. The takeaway here is that WebAssembly is <em>related</em> to JavaScript as it pertains to runtime evaluation, but isn't itself JavaScript. This is a common misconception. WebAssembly is not a transpiler like TypeScript, CoffeeScript, etc.</p>
 <h1 id="mono">Mono</h1>
 <p>Recall that I mentioned Mono at the beginning of this post. It’s arguably the most important part of the .NET-in-the-browser story but it’s probably also the least understood.</p>
@@ -137,7 +137,7 @@
 <p>It's also important to note that this is a full .NET runtime that evaluates .NET assemblies. Unlike the WebAssembly support that compiled languages like C++ and Rust are exploring where the application itself is compiled to WebAssembly, the Mono bits are the only thing that needs to be compiled to WebAssembly. Your own .NET assembly will &quot;just work&quot; when it's loaded and interpreted by the Mono runtime. All that said, the Mono team is also exploring a precompilation scenario for enhanced performance. In that mode, you would essentially compile your .NET code along with the Mono runtime directly into WebAssembly bytecode.</p>
 <h1 id="blazor">Blazor</h1>
 <p>All of this sets up the exciting work going on in Blazor itself. Blazor is the name of a project that includes both a runtime component and various tooling. The tooling helps produce the assemblies that the runtime bits know how to work with. What gets delivered to your browser looks like this:</p>
-<img src="/posts/images/blazor.png" class="img-responsive" style="margin-top: 6px; margin-bottom: 6px;">
+<img src="/posts/images/blazor.png" class="img-fluid" style="margin-top: 6px; margin-bottom: 6px;">
 <p>There's a lot going on here so let's examine each part:</p>
 <ul>
 <li><strong>Blazor Page</strong> - The HTML file that Blazor produces is really simple. It basically just includes CSS files and headers as well as a couple JavaScript files to help bootstrap the WebAssembly support (WebAssembly modules currently have to be loaded by JavaScript).</li>

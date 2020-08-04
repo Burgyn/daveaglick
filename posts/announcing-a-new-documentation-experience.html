@@ -121,7 +121,7 @@
 <pre><code>wyam -r Docs
 </code></pre>
 <p>Wikis and blogs are cool, but what really makes this recipe special is that it has full support for API documentation from .NET source files and assemblies. By default the recipe will look in a <code>src</code> folder adjacent to your <code>input</code> folder (the actual default <a href="https://wyam.io/docs/concepts/io#globbing">globbing pattern</a> for locating source files is &quot;src/<strong>/{!bin,!obj,!packages,!*.Tests,}/</strong>/*.cs&quot;). This can be easily changed <a href="https://wyam.io/recipes/docs/settings">along with many other settings</a>. Once the recipe knows where to look for your source files, you'll see a special &quot;API&quot; section in your documentation with really nice looking API pages.</p>
-<p><img src="/posts/images/api-docs.png" class="img-responsive"></img></p>
+<p><img src="/posts/images/api-docs.png" class="img-fluid"></img></p>
 <p>Some of the other features of the recipe include:</p>
 <ul>
 <li>Nested documentation content and wiki pages.</li>
@@ -142,7 +142,7 @@
 <p>A good example is the <a href="https://wyam.io/modules">modules</a> section on the Wyam website. That page, and the detail pages for each module, are automatically generated from a single template file by examining the code analysis output that the Docs recipe already performs. Making use of that information to create an additional experience required very little additional code (just one extra pipeline in the <a href="https://wyam.io/docs/usage/configuration">configuration file</a> and a single Razor template). I'd venture that heavily data-driven customization like this isn't this easy in any other generator.</p>
 <h1 id="a-piece-of-cake">A Piece Of Cake</h1>
 <p>I need to take a moment here and thank the <a href="https://github.com/orgs/cake-build/people">Cake team</a> for their support of this project. For the last several months, I've been working closely with them to convert their existing ASP.NET powered documentation site (which was already one of the best open source doc sites out there, at least in the .NET ecosystem) to a fully-static site powered by the new Wyam Docs recipe. It was a great use case requiring both built-in functionality and site-specific customization and helped mould this initial release of the Docs recipe. I couldn't have asked for better team mates. The result is <a href="http://cakebuild.net">a beautiful, fast, and robust documentation site</a>. The source code for the new Cake site is <a href="https://github.com/cake-build/website">available on GitHub</a> and serves as a great example of Wyam Docs recipe deployment with some additional customization.</p>
-<p><img src="/posts/images/cake-docs.png" class="img-responsive"></img></p>
+<p><img src="/posts/images/cake-docs.png" class="img-fluid"></img></p>
 <h1 id="go-forth-and-build">Go Forth And Build</h1>
 <p>If you're interested in taking a look, I'm happy to help. <a href="https://wyam.io">The Wyam website</a> has detailed documentation, there's an active <a href="https://gitter.im/Wyamio/Wyam">Gitter room</a>, and I try to stay responsive with <a href="https://github.com/Wyamio/Wyam/issues">GitHub issues</a>.</p>
 

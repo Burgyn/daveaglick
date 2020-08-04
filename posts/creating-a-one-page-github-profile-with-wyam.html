@@ -169,7 +169,7 @@ Pipelines.Add(
 <p>Next we're pulling the Octokit objects we stored in metadata and which were made available as the Razor page's model into local variable to make using them a little easier. This part is optional, but writing <code>&#64;user.Name</code> is preferable to <code>&#64;Model.Get&lt;User&gt;(&quot;User&quot;).Name</code> if we're going to be accessing those model properties a lot.</p>
 <p>The rest of the page is bare-minimum Razor and HTML to display information about the requested GitHub user.</p>
 <p>If you don't already have Wyam, <a href="https://wyam.io/docs/usage/obtaining">go download it</a> and then run <code>wyam -p</code> from the directory where your <code>config.wyam</code> file is located. Once the build is done, you should be able to preview the site at <code>http://localhost:5080/</code>:</p>
-<p><img src="/posts/images/github-wyam1.png" class="img-responsive"></img></p>
+<p><img src="/posts/images/github-wyam1.png" class="img-fluid"></img></p>
 <h1 id="making-it-pretty">Making It Pretty</h1>
 <p>It works, but it's ugly. Let's go to my favorite site for web templates, <a href="https://html5up.net/">HTML5 UP!</a>. I think <a href="https://html5up.net/read-only">Read Only</a> will work well so let's use that one. Download and unzip the theme into a temporary location and then copy everything but the index.html file to the <code>input</code> directory we created earlier (you should end up with an <code>assets</code> and an <code>images</code> folder inside your <code>input</code> folder).</p>
 <p>First we need to add one more pipeline to our <code>config.wyam</code> file to copy these extra theme files to your output directory using the <a href="https://wyam.io/modules/copyfiles">CopyFiles module</a>. Place this under your existing pipeline:</p>
@@ -279,7 +279,7 @@ Pipelines.Add(
 &lt;/html&gt;
 </code></pre>
 <p>And there you have it, your very own static GitHub about page:</p>
-<p><img src="/posts/images/github-wyam2.png" class="img-responsive"></img></p>
+<p><img src="/posts/images/github-wyam2.png" class="img-fluid"></img></p>
 
 
 

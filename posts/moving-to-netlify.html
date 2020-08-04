@@ -120,7 +120,7 @@
 <h1 id="process">Process</h1>
 <p>Moving hosts for a static site is generally an easier process than changing hosts for a more server-dependent site. Usually all you have to do is upload the static resources somewhere and change your DNS settings.</p>
 <p>When you first set up a new site, there's a huge box right on their admin page that tells you to drag-and-drop your files.</p>
-<p><img src="/posts/images/netlify.png" class="img-responsive"></img></p>
+<p><img src="/posts/images/netlify.png" class="img-fluid"></img></p>
 <p>This works exactly as intended and gets you up and running quickly. Alternativly, if you'd like to make updating the site part of your build process, you can <a href="https://www.netlify.com/docs/api/#deploying-to-netlify">upload a new version of your site as a zip file</a> to a particular endpoint and Netlify will automatically unzip it and deploy it for you. The upload can even be done in a single curl command. There's also a <a href="https://www.netlify.com/docs/cli/">Node-powered CLI tool</a> that can be used to upload a site and perform other maintenance activities.</p>
 <p>I ended up using the zip file upload process since it was easy to script from a <a href="http://cakebuild.net/">Cake Build</a> script and now my site is automatically built using <a href="https://wyam.io">Wyam</a> by <a href="https://www.appveyor.com/">AppVeyor</a> and deployed on every commit.</p>
 <p>Changing DNS settings was also easy and they have a number of different <a href="https://www.netlify.com/docs/custom-domains/">supported configurations</a> depending on how your DNS is set up.</p>

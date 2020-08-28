@@ -9,6 +9,8 @@
 
   <title>Dave Glick - Default Interface Members and Inheritance</title>
 
+  <link rel="canonical" href="https://daveaglick.com/posts/default-interface-members-and-inheritance">
+
       <link type="application/rss+xml" rel="alternate" href="/feed.rss" />
       <link type="application/atom+xml" rel="alternate" href="/feed.atom" />
   
@@ -166,7 +168,7 @@ public class Avalon : Toyota
 Console.WriteLine(car.Cylinders);
 </code></pre>
 <p>My initial reaction was that this should output <code>6</code>, but it actually outputs <code>4</code>.</p>
-<img src="https://media2.giphy.com/media/g01ZnwAUvutuK8GIQn/giphy.gif" width="480" height="270" />
+<img src="https://media1.giphy.com/media/g01ZnwAUvutuK8GIQn/giphy.gif" width="480" height="270" />
 <p>The reason is because <code>Avalon.Cylinders</code> isn't actually implementing <code>ICar.Cylinders</code> given that the interface is implicit via the base <code>Toyota</code> class. They're two totally different properties.</p>
 <p><a href="https://twitter.com/ben_a_adams/status/1169790052425240581">Ben Adams was the first</a> of many to point out that this behavior isn't actually different from the way interfaces currently work. The code above is essentially equivalent to writing the following, which will also output <code>4</code> instead of <code>6</code>:</p>
 <pre><code class="language-csharp">interface ICar
